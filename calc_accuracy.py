@@ -57,7 +57,30 @@ def average_metrics(metrics_list):
         "Average F1-score": total_f1 / n
     }
 
-if __name__ == "__main__":
+
+def average_metrics_v2(metrics_list):
+    """
+    Computes the average of Precision, Recall, and F1-score from a list of metric dictionaries.
+
+    :param metrics_list: List of dictionaries containing 'ace', 'precision', and 'f1-score'
+    :return: Dictionary with averaged values
+    """
+    if not metrics_list:
+        return {"Average Recall": 0, "Average Precision": 0, "Average F1-score": 0}
+    
+    total_recall = sum(m["Recall"] for m in metrics_list)
+    total_precision = sum(m["Precision"] for m in metrics_list)
+    total_f1 = sum(m["F1-score"] for m in metrics_list)
+    
+    n = len(metrics_list)
+    
+    return {
+        "Average Recall": total_recall / n,
+        "Average Precision": total_precision / n,
+        "Average F1-score": total_f1 / n
+    }
+
+def test_evaluate_prediction():   
     # Example usage:
     predicted = {
         "number_of_diode_connected_transistors": 6,
@@ -71,3 +94,17 @@ if __name__ == "__main__":
 
     result = evaluate_prediction(predicted, ground_truth)
     print(result)
+
+if __name__ == "__main__":
+    #test_evaluate_HL2_predictions()
+    res = [{'Precision': 0.5454545454545454, 'Recall': 0.3157894736842105, 'F1-score': 0.39999999999999997},
+        {'Precision': 0.45454545454545453, 'Recall': 0.29411764705882354, 'F1-score': 0.35714285714285715},
+        {'Precision': 0.5, 'Recall': 0.14285714285714285, 'F1-score': 0.22222222222222224},
+        {'Precision': 0.2727272727272727, 'Recall': 0.14285714285714285, 'F1-score': 0.18749999999999997},
+        {'Precision': 0.2857142857142857, 'Recall': 0.08333333333333333, 'F1-score': 0.12903225806451613},
+        {'Precision': 0.5714285714285714, 'Recall': 0.34782608695652173, 'F1-score': 0.4324324324324324},
+        {'Precision': 0.4166666666666667, 'Recall': 0.18518518518518517, 'F1-score': 0.2564102564102564},
+        {'Precision': 0.38461538461538464, 'Recall': 0.1724137931034483, 'F1-score': 0.23809523809523808},
+        {'Precision': 0.6, 'Recall': 0.1875, 'F1-score': 0.2857142857142857},
+        {'Precision': 0.36363636363636365, 'Recall': 0.14814814814814814, 'F1-score': 0.21052631578947367}]
+    print (average_metrics_v2(res))
