@@ -1,0 +1,287 @@
+<acst_results>
+	<date day="17" month="3" year="2025" hour="13" minute="25" second="21"/>
+	<structure_recognition_results>
+		<structure name="MosfetCascodeNMOSAnalogInverterCurrentMirrorLoad[1]" techType="undefined" instance="/">
+			<pins>
+				<pin name="Gnd" net="/gnd!"/>
+				<pin name="Inner" net="/SecondStageYinnerStageBias"/>
+				<pin name="InputNMOS1" net="/innerComplementarySecondStage"/>
+				<pin name="InputPMOS1" net="/outFirstStage"/>
+				<pin name="Output" net="/out"/>
+				<pin name="Vdd" net="/vdd!"/>
+			</pins>
+			<structure name="MosfetNormalArray[9]" techType="p" instance="/">
+				<pins>
+					<pin name="Bulk" net="/vdd!"/>
+					<pin name="Drain" net="/out"/>
+					<pin name="Gate" net="/outFirstStage"/>
+					<pin name="Source" net="/vdd!"/>
+				</pins>
+				<devices>
+					<device name="/m9" deviceType="Mosfet" techType="p" instance="/"/>
+				</devices>
+			</structure>
+			<structure name="MosfetCurrentMirrorLoad[1]" techType="n" instance="/">
+				<pins>
+					<pin name="Inner" net="/SecondStageYinnerStageBias"/>
+					<pin name="Input" net="/innerComplementarySecondStage"/>
+					<pin name="Output" net="/out"/>
+					<pin name="Source" net="/gnd!"/>
+				</pins>
+				<structure name="MosfetNormalArray[6]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/SecondStageYinnerStageBias"/>
+						<pin name="Drain" net="/out"/>
+						<pin name="Gate" net="/innerComplementarySecondStage"/>
+						<pin name="Source" net="/SecondStageYinnerStageBias"/>
+					</pins>
+					<devices>
+						<device name="/m7" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+				<structure name="MosfetNormalArray[2]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/gnd!"/>
+						<pin name="Drain" net="/SecondStageYinnerStageBias"/>
+						<pin name="Gate" net="/innerComplementarySecondStage"/>
+						<pin name="Source" net="/gnd!"/>
+					</pins>
+					<devices>
+						<device name="/m8" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+			</structure>
+		</structure>
+		<structure name="MosfetFourTransistorCurrentMirror[1]" techType="n" instance="/">
+			<pins>
+				<pin name="Inner1" net="/StageBiasComplementarySecondStageYinner"/>
+				<pin name="Inner2" net="/SecondStageYinnerStageBias"/>
+				<pin name="Input" net="/innerComplementarySecondStage"/>
+				<pin name="Output" net="/out"/>
+				<pin name="Source" net="/gnd!"/>
+			</pins>
+			<structure name="MosfetVoltageReference1[1]" techType="n" instance="/">
+				<pins>
+					<pin name="Inner" net="/StageBiasComplementarySecondStageYinner"/>
+					<pin name="Input" net="/innerComplementarySecondStage"/>
+					<pin name="Source" net="/gnd!"/>
+				</pins>
+				<structure name="MosfetDiodeArray[2]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/StageBiasComplementarySecondStageYinner"/>
+						<pin name="Drain" net="/innerComplementarySecondStage"/>
+						<pin name="Source" net="/StageBiasComplementarySecondStageYinner"/>
+					</pins>
+					<devices>
+						<device name="/m10" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+				<structure name="MosfetNormalArray[3]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/gnd!"/>
+						<pin name="Drain" net="/StageBiasComplementarySecondStageYinner"/>
+						<pin name="Gate" net="/innerComplementarySecondStage"/>
+						<pin name="Source" net="/gnd!"/>
+					</pins>
+					<devices>
+						<device name="/m11" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+			</structure>
+			<structure name="MosfetCurrentMirrorLoad[1]" techType="n" instance="/">
+				<pins>
+					<pin name="Inner" net="/SecondStageYinnerStageBias"/>
+					<pin name="Input" net="/innerComplementarySecondStage"/>
+					<pin name="Output" net="/out"/>
+					<pin name="Source" net="/gnd!"/>
+				</pins>
+				<structure name="MosfetNormalArray[6]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/SecondStageYinnerStageBias"/>
+						<pin name="Drain" net="/out"/>
+						<pin name="Gate" net="/innerComplementarySecondStage"/>
+						<pin name="Source" net="/SecondStageYinnerStageBias"/>
+					</pins>
+					<devices>
+						<device name="/m7" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+				<structure name="MosfetNormalArray[2]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/gnd!"/>
+						<pin name="Drain" net="/SecondStageYinnerStageBias"/>
+						<pin name="Gate" net="/innerComplementarySecondStage"/>
+						<pin name="Source" net="/gnd!"/>
+					</pins>
+					<devices>
+						<device name="/m8" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+			</structure>
+		</structure>
+		<structure name="MosfetImprovedWilsonCurrentMirror[1]" techType="n" instance="/">
+			<pins>
+				<pin name="Inner1" net="/VoltageBiasXXnXX1Yinner"/>
+				<pin name="Inner2" net="/outSourceVoltageBiasXXnXX1"/>
+				<pin name="Input" net="/ibias"/>
+				<pin name="Output" net="/FirstStageYsourceTransconductance"/>
+				<pin name="Source" net="/gnd!"/>
+			</pins>
+			<structure name="MosfetMixedCascodePair1[1]" techType="n" instance="/">
+				<pins>
+					<pin name="Drain" net="/ibias"/>
+					<pin name="Gate" net="/outSourceVoltageBiasXXnXX1"/>
+					<pin name="Inner" net="/VoltageBiasXXnXX1Yinner"/>
+					<pin name="Source" net="/gnd!"/>
+				</pins>
+				<structure name="MosfetDiodeArray[1]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/VoltageBiasXXnXX1Yinner"/>
+						<pin name="Drain" net="/ibias"/>
+						<pin name="Source" net="/VoltageBiasXXnXX1Yinner"/>
+					</pins>
+					<devices>
+						<device name="/m13" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+				<structure name="MosfetNormalArray[4]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/gnd!"/>
+						<pin name="Drain" net="/VoltageBiasXXnXX1Yinner"/>
+						<pin name="Gate" net="/outSourceVoltageBiasXXnXX1"/>
+						<pin name="Source" net="/gnd!"/>
+					</pins>
+					<devices>
+						<device name="/m14" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+			</structure>
+			<structure name="MosfetMixedCascodePair2[1]" techType="n" instance="/">
+				<pins>
+					<pin name="Drain" net="/FirstStageYsourceTransconductance"/>
+					<pin name="Gate" net="/ibias"/>
+					<pin name="Inner" net="/outSourceVoltageBiasXXnXX1"/>
+					<pin name="Source" net="/gnd!"/>
+				</pins>
+				<structure name="MosfetNormalArray[1]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/outSourceVoltageBiasXXnXX1"/>
+						<pin name="Drain" net="/FirstStageYsourceTransconductance"/>
+						<pin name="Gate" net="/ibias"/>
+						<pin name="Source" net="/outSourceVoltageBiasXXnXX1"/>
+					</pins>
+					<devices>
+						<device name="/m3" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+				<structure name="MosfetDiodeArray[3]" techType="n" instance="/">
+					<pins>
+						<pin name="Bulk" net="/gnd!"/>
+						<pin name="Drain" net="/outSourceVoltageBiasXXnXX1"/>
+						<pin name="Source" net="/gnd!"/>
+					</pins>
+					<devices>
+						<device name="/m4" deviceType="Mosfet" techType="n" instance="/"/>
+					</devices>
+				</structure>
+			</structure>
+		</structure>
+		<structure name="MosfetDifferentialPair[1]" techType="n" instance="/">
+			<pins>
+				<pin name="Input1" net="/in2"/>
+				<pin name="Input2" net="/in1"/>
+				<pin name="Output1" net="/inTransconductanceComplementarySecondStage"/>
+				<pin name="Output2" net="/outFirstStage"/>
+				<pin name="Source" net="/FirstStageYsourceTransconductance"/>
+			</pins>
+			<structure name="MosfetNormalArray[5]" techType="n" instance="/">
+				<pins>
+					<pin name="Bulk" net="/FirstStageYsourceTransconductance"/>
+					<pin name="Drain" net="/inTransconductanceComplementarySecondStage"/>
+					<pin name="Gate" net="/in2"/>
+					<pin name="Source" net="/FirstStageYsourceTransconductance"/>
+				</pins>
+				<devices>
+					<device name="/m6" deviceType="Mosfet" techType="n" instance="/"/>
+				</devices>
+			</structure>
+			<structure name="MosfetNormalArray[7]" techType="n" instance="/">
+				<pins>
+					<pin name="Bulk" net="/FirstStageYsourceTransconductance"/>
+					<pin name="Drain" net="/outFirstStage"/>
+					<pin name="Gate" net="/in1"/>
+					<pin name="Source" net="/FirstStageYsourceTransconductance"/>
+				</pins>
+				<devices>
+					<device name="/m5" deviceType="Mosfet" techType="n" instance="/"/>
+				</devices>
+			</structure>
+		</structure>
+		<structure name="MosfetSimpleCurrentMirror[1]" techType="p" instance="/">
+			<pins>
+				<pin name="Input" net="/inTransconductanceComplementarySecondStage"/>
+				<pin name="Output" net="/innerComplementarySecondStage"/>
+				<pin name="Source" net="/vdd!"/>
+			</pins>
+			<structure name="MosfetDiodeArray[4]" techType="p" instance="/">
+				<pins>
+					<pin name="Bulk" net="/vdd!"/>
+					<pin name="Drain" net="/inTransconductanceComplementarySecondStage"/>
+					<pin name="Source" net="/vdd!"/>
+				</pins>
+				<devices>
+					<device name="/m2" deviceType="Mosfet" techType="p" instance="/"/>
+				</devices>
+			</structure>
+			<structure name="MosfetNormalArray[8]" techType="p" instance="/">
+				<pins>
+					<pin name="Bulk" net="/vdd!"/>
+					<pin name="Drain" net="/innerComplementarySecondStage"/>
+					<pin name="Gate" net="/inTransconductanceComplementarySecondStage"/>
+					<pin name="Source" net="/vdd!"/>
+				</pins>
+				<devices>
+					<device name="/m12" deviceType="Mosfet" techType="p" instance="/"/>
+				</devices>
+			</structure>
+		</structure>
+		<structure name="MosfetSimpleCurrentMirror[2]" techType="p" instance="/">
+			<pins>
+				<pin name="Input" net="/outFirstStage"/>
+				<pin name="Output" net="/out"/>
+				<pin name="Source" net="/vdd!"/>
+			</pins>
+			<structure name="MosfetDiodeArray[5]" techType="p" instance="/">
+				<pins>
+					<pin name="Bulk" net="/vdd!"/>
+					<pin name="Drain" net="/outFirstStage"/>
+					<pin name="Source" net="/vdd!"/>
+				</pins>
+				<devices>
+					<device name="/m1" deviceType="Mosfet" techType="p" instance="/"/>
+				</devices>
+			</structure>
+			<structure name="MosfetNormalArray[9]" techType="p" instance="/">
+				<pins>
+					<pin name="Bulk" net="/vdd!"/>
+					<pin name="Drain" net="/out"/>
+					<pin name="Gate" net="/outFirstStage"/>
+					<pin name="Source" net="/vdd!"/>
+				</pins>
+				<devices>
+					<device name="/m9" deviceType="Mosfet" techType="p" instance="/"/>
+				</devices>
+			</structure>
+		</structure>
+		<structure name="CapacitorArray[1]" techType="undefined" instance="/">
+			<pins>
+				<pin name="Minus" net="/gnd!"/>
+				<pin name="Plus" net="/out"/>
+			</pins>
+			<devices>
+				<device name="/c1" deviceType="Capacitor" techType="undefined" instance="/"/>
+			</devices>
+		</structure>
+	</structure_recognition_results>
+</acst_results>
+
