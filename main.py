@@ -18,8 +18,6 @@ from loguru import logger
 import sys
 import datetime
 log_level = "DEBUG"
-# log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS zz}</green> | <level>{level: <8}</level> | <yellow>Line {line: >4} ({file}):</yellow> <b>{message}</b>"
-# log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <yellow>Line {line: >4} ({file}):</yellow> <b>{message}</b>"
 log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
 logfile = f"logs/{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}.txt"
 logger.remove() #Why does it logs duplicated message? · Issue #208 · Delgan/loguru https://github.com/Delgan/loguru/issues/208
@@ -27,7 +25,6 @@ logger.add(sys.stderr, level=log_level, format=log_format, colorize=True, backtr
 logger.add(logfile, level=log_level, format=log_format, colorize=False, backtrace=True, diagnose=True)
 
 
-    
 class AnswerFormat(BaseModel):
     reasoning_steps: list[str] = Field(description="The reasoning steps leading to the final conclusion") 
     number_of_diode_connected_transistors: int = Field(description="The number of diode-connected transistors")
@@ -114,100 +111,6 @@ def create_prompt_hl2_current_mirrors_only():
     )
     return prompt
 
-def identify_HL1_devices(subset="medium", model=None):
-    results = []
-    num_attempts = 0
-    max_attempts = 30
-    for i in range(1, 11):
-        data = SPICENetlist(f"data/{subset}/netlist{i}/")
-
-        logger.info ("netlist #" + str(i))
-
-        try:
-            prompt = create_prompt_hl1()
-            logger.info(prompt.invoke(data.netlist).to_string())
-            chain = prompt | model #| parser
-            output = chain.invoke({"netlist": data.netlist})
-
-        except Exception as e:
-            logger.error ("exception: ", e)
-            exit()
-
-        # print (output.model_dump_json(indent=2))
-        logger.info ("# output=", output)
-
-        try:
-            predicted_output = json.loads(output.content[output.content.find("<json>") + len("<json>"):output.content.find("</json>")])
-    
-            logger.info ("------------------------------------")
-            logger.info (f"predicted_output: {json.dumps(predicted_output, indent=2)}")
-            logger.info (f"ground truth: {json.dumps(data.hl1_gt, indent=2)}")
-            eval_results = compute_cluster_metrics_hl1(predicted=predicted_output, ground_truth=data.hl1_gt)
-            logger.info (f"{eval_results=}")
-            logger.info ("------------------------------------")
-            results.append(eval_results)
-
-            num_attempts = 0
-        except json.decoder.JSONDecodeError as e:
-            logger.error (f"parsing LLM output failed, retry {num_attempts}...")
-            num_attempts += 1
-            continue
-        except Exception as e:
-            logger.error (f"exception: {e}")
-            logger.error (f"could not compute comparison metrics, retry {num_attempts}...")
-            num_attempts += 1
-            continue
-
-    # print (average_metrics_v2(results))
-    return average_metrics_v2(results)
-
-def identify_HL2_devices(subset="medium", model=None):
-    results = []
-    i = 1
-    max_i  = 11
-
-    num_attempts = 0
-    max_attempts = 30
-    while i <  max_i and num_attempts < max_attempts:
-        data = SPICENetlist(f"data/{subset}/netlist{i}/")
-        logger.info ("netlist #" + str(i))
-        try:
-            prompt = create_prompt_hl2()
-            logger.info(prompt.invoke(data.netlist).to_string())
-            chain = prompt | model #| parser
-            output = chain.invoke({"netlist": data.netlist})
-
-        except Exception as e:
-            logger.error (f"exception: {e}")
-            exit()
-        
-        logger.info (f"# output={output}")
-
-        try:
-            predicted_output = json.loads(output.content[output.content.find("<json>") + len("<json>"):output.content.find("</json>")])
-    
-            logger.info ("------------------------------------")
-            logger.info (f"predicted_output: {json.dumps(predicted_output, indent=2)}")
-            logger.info (f"ground truth: {json.dumps(data.hl2_gt, indent=2)}")
-            eval_results = compute_cluster_metrics(predicted=predicted_output, ground_truth=data.hl2_gt)
-            logger.info (f"{eval_results=}")
-            logger.info ("------------------------------------")
-            results.append(eval_results)
-
-            num_attempts = 0
-        except json.decoder.JSONDecodeError as e:
-            logger.error (f"parsing LLM output failed, retry {num_attempts}...")
-            num_attempts += 1
-            continue
-        except Exception as e:
-            logger.error (f"exception: {e}")
-            logger.error (f"could not compute comparison metrics, retry {num_attempts}...")
-            num_attempts += 1
-            continue
-
-        i += 1
-    return average_metrics_v2(results)
-
 def identify_devices(subset="medium", model=None, prompt=None, category="single"):
     results = []
     i = 1
@@ -282,7 +185,7 @@ llm_models = [
     "deepseek-r1:70b",
 ]
 
-subset = "medium"
+subset = "medium" # "small", "medium", "large"
 for model_id in llm_models:
     llm =load_ollama(model_id)
     for category in ["single", "pair"]:
