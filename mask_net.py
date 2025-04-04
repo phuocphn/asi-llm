@@ -47,6 +47,19 @@ def mask_net(netlist_path, use_meaninful_token=False):
                 for i in range(1, len(connection_info)):
                     if connection_info[i] in ["nmos", "pmos", "ibias", "vref", "in1", "in2", "out", "out1", "out2"]:
                         new_line += connection_info[i] + " "
+
+                    elif connection_info[i] == "sourceNmos":
+                        if use_meaninful_token:
+                            new_line += "ground" + " "
+                        else:
+                            new_line += "gnd!" + " "
+
+                    elif connection_info[i] == "sourcePmos":
+                        if use_meaninful_token:
+                            new_line += "supply" + " "
+                        else:
+                            new_line += "vdd!" + " "
+
                     elif connection_info[i] not in mapping:
                         mapping[connection_info[i]] = f"net{netid}" if not use_meaninful_token else chr(netid)#
                         netid += 1 
@@ -68,4 +81,4 @@ def get_masked_netlist(netlist_path, use_meaninful_token=True):
 # mask_net(PATH, use_meaninful_token=True)
 
 if __name__ == "__main__":
-    print(get_masked_netlist("data/netlist1/", False))
+    print(get_masked_netlist("data/medium/netlist1/", True))
