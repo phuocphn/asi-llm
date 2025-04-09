@@ -196,6 +196,28 @@ def merge_cm_transistor_cluster(ground_truth):
         new_gt.append({'sub_circuit_name': 'CM', 'transistor_names': cm})
     return new_gt
 
+def average_metrics(metrics_list):
+    """
+    Computes the average of Precision, Recall, and F1-score from a list of metric dictionaries.
+
+    :param metrics_list: List of dictionaries containing 'ace', 'precision', and 'f1-score'
+    :return: Dictionary with averaged values
+    """
+    if not metrics_list:
+        return {"Average Recall": 0, "Average Precision": 0, "Average F1-score": 0}
+    
+    total_recall = sum(m["Recall"] for m in metrics_list)
+    total_precision = sum(m["Precision"] for m in metrics_list)
+    total_f1 = sum(m["F1-score"] for m in metrics_list)
+    
+    n = len(metrics_list)
+    
+    return {
+        "Average Recall": total_recall / n,
+        "Average Precision": total_precision / n,
+        "Average F1-score": total_f1 / n
+    }
+
 
 if __name__ == "__main__":
 

@@ -3,14 +3,13 @@ import torch
 import os
 import json
 
-from calc_accuracy import evaluate_prediction, average_metrics, average_metrics_v2
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_ollama import  ChatOllama
 from langchain_openai import ChatOpenAI
 
-from calc1 import compute_cluster_metrics, compute_cluster_metrics_hl1
+from calc1 import compute_cluster_metrics, compute_cluster_metrics_hl1, average_metrics
 from netlist import SPICENetlist
 
 #-----
@@ -114,13 +113,13 @@ def create_prompt_hl2_current_mirrors_only():
 def identify_devices(subset="medium", model=None, prompt=None, category="single"):
     results = []
     i = 1
-    max_i  = 11
+    max_i  = 101
 
     num_attempts = 0
     max_attempts = 30
 
     while i <  max_i and num_attempts < max_attempts:
-        data = SPICENetlist(f"data/{subset}/netlist{i}/")
+        data = SPICENetlist(f"data/benchmark-asi-100/{subset}/{i}/")
         logger.info ("netlist #" + str(i))
         try:
             # prompt = create_prompt_hl2()
@@ -166,7 +165,7 @@ def identify_devices(subset="medium", model=None, prompt=None, category="single"
             continue
 
         i += 1
-    return average_metrics_v2(results)
+    return average_metrics(results)
 
 logger.info ("\n\n\n")
 
@@ -178,14 +177,12 @@ llm_models = [
     "mistral:7b-instruct",
     "mixtral:8x22b"
 ]
+
 llm_models = [
-    "mistral:7b-instruct",
-]
-llm_models = [
-    "deepseek-r1:70b",
+    "llama3:70b",
 ]
 
-subset = "medium" # "small", "medium", "large"
+subset = "small" # "small", "medium", "large"
 for model_id in llm_models:
     llm =load_ollama(model_id)
     for category in ["single", "pair"]:
