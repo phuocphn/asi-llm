@@ -59,7 +59,7 @@ def extract_HL2_devices(subcircuits):
 
 
 def get_hl1_cluster_labels(netlist_dir="data/netlist1/"):
-	tree = ET.parse(glob.glob(os.path.join(netlist_dir, "*.xml"))[0])
+	tree = ET.parse(glob.glob(os.path.join(netlist_dir, "structure_result.xml"))[0])
 	root = tree.getroot()
 	subcircuits = root[1]
 
@@ -86,7 +86,7 @@ def filter_HL1_blocks(HL2_blocks):
 
 
 def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
-	tree = ET.parse(glob.glob(os.path.join(netlist_dir, "*.xml"))[0])
+	tree = ET.parse(glob.glob(os.path.join(netlist_dir, "structure_result.xml"))[0])
 	root = tree.getroot()
 	subcircuits = root[1]
 	# num_subcircuits = lexxn(subcircuits)
@@ -108,18 +108,6 @@ def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
 					cluster_labels[i]["transistor_names"].remove(tran)
 
 	return cluster_labels
-
-def test():
-	print (f"{num_subcircuits=}")
-	print ("Diode connected devices:")
-	print (extract_diode_connected_devices(subcircuits))
-	print ("HL2 devices:")
-	# print (extract_HL2_devices(subcircuits))
-	for subcircuit in filter_HL1_blocks(extract_HL2_devices(subcircuits)):
-		print (subcircuit)
-
-
-	print (filter_HL1_blocks(extract_HL2_devices(subcircuits)))
 
 if __name__ == "__main__":
 	print(get_hl2_cluster_labels(netlist_dir="data/netlist1/"))
