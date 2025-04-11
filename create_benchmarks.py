@@ -146,7 +146,7 @@ def copy_netlist_files(benchmark_list, data_dir):
         index += 1
 
 
-def write_benchmark_to_file(benchmark_list, file):
+def write_netlist_path_to_file(benchmark_list, file):
     with open(file, "w") as fw:
         for netlist in benchmark_list:
             fw.write(f"{netlist}\n")
@@ -160,6 +160,6 @@ copy_netlist_files(medium_opamps_benchmarks, "data/benchmark-asi-100/medium")
 copy_netlist_files(large_opamps_benchmarks, "data/benchmark-asi-100/large")
 
 
-write_benchmark_to_file(small_opamps_benchmarks, "data/benchmark-asi-100/small.txt")
-write_benchmark_to_file(medium_opamps_benchmarks, "data/benchmark-asi-100/medium.txt")  
-write_benchmark_to_file(large_opamps_benchmarks, "data/benchmark-asi-100/large.txt")
+write_netlist_path_to_file(small_opamps_benchmarks, "data/benchmark-asi-100/small.txt")
+write_netlist_path_to_file(medium_opamps_benchmarks, "data/benchmark-asi-100/medium.txt")  
+write_netlist_path_to_file(large_opamps_benchmarks, "data/benchmark-asi-100/large.txt")
