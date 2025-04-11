@@ -174,3 +174,5 @@ cython_debug/
 .pypirc
 logs
 data/benchmark-asi-100
+results
+outputs
