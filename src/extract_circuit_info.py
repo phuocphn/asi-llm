@@ -21,6 +21,11 @@ rename_map = {
 	"MosfetCascodeAnalogInverterNmosCurrentMirrorLoad": "CM",
 	"MosfetFourTransistorCurrentMirror": "CM",
 	"MosfetCascodeCurrentMirror": "CM",
+	"MosfetCascodeAnalogInverterTwoCurrentMirrorLoads": "Inverter",
+	"MosfetWilsonCurrentMirror": "CM",
+	"MosfetWideSwingCascodeCurrentMirror": "CM",
+	"InverterPmosCurrentMirrorLoad": "CM",
+	"MosfetCascodedDifferentialPair": "DiffPair",
 	'CapacitorArray': 'cap',
 	'MosfetDiodeArray': 'MosfetDiode',
 	'MosfetNormalArray': 'Mosfet'
