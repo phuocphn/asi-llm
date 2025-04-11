@@ -59,7 +59,13 @@ def extract_HL2_devices(subcircuits):
 		device_names = []
 		for device in sc.iter('device'):
 			device_names.append(device.attrib['name'].replace("/", ""))
-		HL2_subcircuits.append( {'sub_circuit_name': name, 'transistor_names': device_names})
+		
+		if len(device_names) == 1:
+			print ("Warning: Only one device in subcircuit:", name)
+			print (sc.attrib['name'])
+			
+		if name not in ["cap", "MosfetDiode", "Mosfet"]:
+			HL2_subcircuits.append( {'sub_circuit_name': name, 'transistor_names': device_names})
 	return HL2_subcircuits
 
 
@@ -82,37 +88,11 @@ def get_hl1_cluster_labels(netlist_dir="data/netlist1/"):
 	return [{'sub_circuit_name': 'MosfetDiode', 'transistor_names': [dd for dd in diode_connected_device_names]}]
 
 
-def filter_HL1_blocks(HL2_blocks):
-	blocks = []
-	for b2 in HL2_blocks:
-		if b2["sub_circuit_name"] not in ["cap", "MosfetDiode", "Mosfet"]:
-			blocks.append(b2)
-	return blocks
-
-
 def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
 	tree = ET.parse(glob.glob(os.path.join(netlist_dir, "structure_result.xml"))[0])
 	root = tree.getroot()
 	subcircuits = root[1]
-	# num_subcircuits = lexxn(subcircuits)
-	cluster_labels = filter_HL1_blocks(extract_HL2_devices(subcircuits))
-	# print (cluster_labels)
-
-	def check_exist_in_cm(cluster_labels, tran_name):
-		exist = False
-		for cl in cluster_labels:
-			if cl["sub_circuit_name"] == "CM" and tran_name in cl["transistor_names"]:
-				exist = True
-				break
-		return exist
-
-	for i, cl in enumerate(cluster_labels):
-		if cl["sub_circuit_name"] == "Inverter":
-			for tran in cl["transistor_names"]:
-				if check_exist_in_cm(cluster_labels, tran):
-					cluster_labels[i]["transistor_names"].remove(tran)
-
-	return cluster_labels
+	return extract_HL2_devices(subcircuits)
 
 if __name__ == "__main__":
-	print(get_hl2_cluster_labels(netlist_dir="data/netlist1/"))
+	print(get_hl2_cluster_labels(netlist_dir="data/benchmark-asi-100/small/2/"))
