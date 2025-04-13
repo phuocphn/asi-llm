@@ -18,8 +18,6 @@ medium_llms:
   - "llama3:70b-instruct"
 
 all_llms:
-  - "deepseek-v2.5"
-  - "mistral-large"
   - "llama3.3:70b"
   - "llama3:70b"
   - "llama3:70b-instruct"
