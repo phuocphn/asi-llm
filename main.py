@@ -65,16 +65,16 @@ def create_prompt_hl1():
         [
             (
                 "system",
-                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract diode-connected transistors." + 
-                "Provide your answer in JSON format." + "\n" + 
-                "The output should be a list of dictionaries. Each dictionary must have two keys: " + "\n" +
-                "- 'sub_circuit_name': with the value of `MosfetDiode`" + "\n" + 
-                "- 'transistor_names': a list of transistor names that belong to this building block" + "\n" +
-                "Wrap your response between <json> and </json> tags." + "\n" 
+                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract diode-connected transistors (MosfetDiode), load capacitors (load_cap), and compensation capacitors (compensation_cap). " +
+                "Provide your answer in JSON format.\n" +
+                "The output should be a list of dictionaries. Each dictionary must have two keys:\n" +
+                "- 'sub_circuit_name': the type of device, corresponding to one of the acronyms (MosfetDiode, load_cap, or compensation_cap)\n" +
+                "- 'transistor_names': a list of transistor names that belong to this building block\n" +
+                "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n"
             ),
-            ("human", "Input SPICE netlist\n{netlist} \nLet's think step-by-step."),
+            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step.")
         ]
-    )#.partial(format_instructions=parser.get_format_instructions())
+    )
     return prompt
 
 
@@ -83,15 +83,14 @@ def create_prompt_hl2():
         [
             (
                 "system",
-                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract functional building blocks commonly used in analog design." +  
-                "Specifically, look for the following structures: Differential Pair (DiffPair), Current Mirror (CM), Simple and Cascoded Analog Inverter (Inverter)" + "\n" + 
-                "Provide your output in JSON format, " + 
-                "as a list of dictionaries. Each dictionary must contain two keys: " + "\n" +
-                "- 'sub_circuit_name': the type of building block, represented using the corresponding acronym (DiffPair, CM, or Inverter)" + "\n" +
-                "- 'transistor_names': a list of transistor names that belong to this building block" + "\n" +
-                "Wrap your response between <json> and </json> tags. Do not output any further explanation, description, or comments." + "\n" 
+                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract functional building blocks commonly used in analog design. " +
+                "Specifically, look for the following structures: Differential Pair (DiffPair), Current Mirror (CM), and Simple or Cascoded Analog Inverter (Inverter).\n" +
+                "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n" +
+                "- 'sub_circuit_name': the type of building block, represented using the corresponding acronym (DiffPair, CM, or Inverter)\n" +
+                "- 'transistor_names': a list of transistor names that belong to this building block\n" +
+                "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n"
             ),
-            ("human", "Input SPICE netlist\n{netlist} \nLet's think step-by-step."),
+            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
     )
     return prompt
@@ -102,14 +101,13 @@ def create_prompt_hl2_with_target_single_subcircuit_only(subcircuit_name = "Curr
         [
             (
                 "system",
-                f"You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract available {subcircuit_name} ({abbreviation})." +  
-                "Provide your output in JSON format, " + 
-                "as a list of dictionaries. Each dictionary must contain two keys: " + "\n" +
-                f"- 'sub_circuit_name': '{abbreviation}' " + "\n" +
-                f"- 'transistor_names': a list of transistor names that belong to this {subcircuit_name}" + "\n" +
-                "Wrap your response between <json> and </json> tags. Do not output any further explanation, description, or comments." + "\n" 
+                f"You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract all available {subcircuit_name} ({abbreviation}). " +
+                "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n" +
+                f"- 'sub_circuit_name': '{abbreviation}'\n" +
+                f"- 'transistor_names': a list of transistor names that belong to this {subcircuit_name}\n" +
+                "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n"
             ),
-            ("human", "Input SPICE netlist\n{netlist} \nLet's think step-by-step."),
+            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
     )
     return prompt
@@ -119,17 +117,15 @@ def create_prompt_hl2_with_target_single_subcircuit_only_and_fixed_rule_provided
         [
             (
                 "system",
-                f"You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract available {subcircuit_name} ({abbreviation})." +  
-                f"When you answer the questions, try to use the provided definition, connection rules, identification procedure to identify {subcircuit_name}." + 
-                "Provide your output in JSON format, " + 
-                "as a list of dictionaries. Each dictionary must contain two keys: " + "\n" +
-                f"- 'sub_circuit_name': '{abbreviation}' " + "\n" +
-                f"- 'transistor_names': a list of transistor names that belong to this {subcircuit_name}" + "\n" +
-                "Wrap your response between <json> and </json> tags. Do not output any further explanation, description, or comments." + "\n" 
-
-                f"Knowledge Base: \n {get_knowledge_base()[abbreviation]}" +  "\n" 
+                f"You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract all available {subcircuit_name}s ({abbreviation}). " +
+                f"When answering the question, use the provided definition, connection rules, and identification procedure to identify {subcircuit_name}s. " +
+                "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n" +
+                f"- 'sub_circuit_name': '{abbreviation}'\n" +
+                f"- 'transistor_names': a list of transistor names that belong to this {subcircuit_name}\n" +
+                "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n\n" +
+                f"Knowledge Base:\n{get_knowledge_base()[abbreviation]}\n"
             ),
-            ("human", "Input SPICE netlist\n{netlist} \nLet's think step-by-step."),
+            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
     )
     return prompt
