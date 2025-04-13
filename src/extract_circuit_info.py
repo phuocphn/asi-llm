@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import glob
 import os
+from collections import defaultdict
 
 rename_map = {
 	'MosfetCascodedPMOSAnalogInverter': 'Inverter',
@@ -60,11 +61,10 @@ def extract_HL2_devices(subcircuits):
 		for device in sc.iter('device'):
 			device_names.append(device.attrib['name'].replace("/", ""))
 		
-		if len(device_names) == 1:
-			print ("Warning: Only one device in subcircuit:", name)
-			print (sc.attrib['name'])
-			
 		if name not in ["cap", "MosfetDiode", "Mosfet"]:
+			if len(device_names) == 1:
+				print ("Warning: Only one device in subcircuit:", name)
+				print (sc.attrib['name'])
 			HL2_subcircuits.append( {'sub_circuit_name': name, 'transistor_names': device_names})
 	return HL2_subcircuits
 
@@ -74,18 +74,22 @@ def get_hl1_cluster_labels(netlist_dir="data/netlist1/"):
 	root = tree.getroot()
 	subcircuits = root[1]
 
-	diode_connected_device_names = []
+	devices = defaultdict(set)
 	for sc in subcircuits:
 		for ssc in sc.iter('structure'):
 			name = ssc.attrib['name']
-			if  "MosfetDiodeArray" not in name:
-				continue
-			
-			for device in ssc.iter('device'):
-				diode_connected_device_names.append(device.attrib['name'].replace("/", ""))
+			if  "MosfetDiodeArray" in name:
+				for device in ssc.iter('device'):
+					devices["MosfetDiode"].add(device.attrib['name'].replace("/", ""))
 
-	diode_connected_device_names =  list(set(diode_connected_device_names))
-	return [{'sub_circuit_name': 'MosfetDiode', 'transistor_names': [dd for dd in diode_connected_device_names]}]
+	tree = ET.parse(glob.glob(os.path.join(netlist_dir, "partitioning_result.xml"))[0])
+	root = tree.getroot()
+	subcircuits = root[1]
+	for cap in subcircuits.iter('capacitance'):
+		print (cap.attrib['type'].replace("/", ""))
+		for device in cap.iter('device'):
+			devices[cap.attrib['type'] + "_cap"].add(device.attrib['name'].replace("/", ""))
+	return [{'sub_circuit_name': k, 'transistor_names': list(v)} for k,v in devices.items()]
 
 
 def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
