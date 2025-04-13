@@ -1,3 +1,4 @@
+from pathlib import Path
 import transformers
 import torch
 import os
@@ -130,6 +131,24 @@ def create_prompt_hl2_with_target_single_subcircuit_only_and_fixed_rule_provided
     )
     return prompt
 
+def create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided():
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify the following functional building blocks: Differential Pair (DiffPair), Current Mirror (CM), and Simple or Cascoded Analog Inverter (Inverter).\n" +
+                f"When answering the question, use the provided definition, connection rules, and procedure to identify these functional building blocks. " +
+                "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n" +
+                "- 'sub_circuit_name': the type of building block, represented using the corresponding acronym (DiffPair, CM, or Inverter)\n" +
+                "- 'transistor_names': a list of transistor names that belong to this building block\n" +
+                "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n\n" + 
+                f"Knowledge Base:\n {get_knowledge_base()['DiffPair']}\n {get_knowledge_base()['CM']} \n {get_knowledge_base()['Inverter']}"
+            ),
+            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
+        ]
+    )
+    return prompt
+
 def llm_invoke(model, prompt, data):
     try:
         # prompt = create_prompt_hl2()
@@ -137,17 +156,24 @@ def llm_invoke(model, prompt, data):
         chain = prompt | model #| parser
         output = chain.invoke({"netlist": data.netlist})
         parsed_data = json.loads(output.content[output.content.find("<json>") + len("<json>"):output.content.find("</json>")])
-        assert isinstance(parsed_data, list), "parsed data is not a list"
+        assert isinstance(parsed_data, list), "parsed data is not a list: " + str(parsed_data)
         return output, parsed_data
     except json.decoder.JSONDecodeError as e:
-        logger.error (f"parsing LLM output failed")
+        logger.error (f"parsing LLM output failed: " + output.content)
         return None, None
 
     except Exception as e:
         logger.error (f"exception: {e}")
         return None, None
 
-def identify_devices(subset="medium", model=None, prompt=None, category="single"):
+def format_cluster_info(results):
+    out = ""
+    for res in results:
+        out += str(res) + "\n"
+    return out
+
+
+def identify_devices(subset="medium", model=None, prompts=None, category="single", metadata=None):
     results = []
     i = 1
     max_i  = 101
@@ -160,24 +186,27 @@ def identify_devices(subset="medium", model=None, prompt=None, category="single"
         logger.info ("netlist #" + str(i))
 
         try:
-            if len(prompt) == 1:
-                output, parsed_data = llm_invoke(model, prompt[0], data)
+            if len(prompts) == 1:
+                outputs = []
+                output, parsed_data = llm_invoke(model, prompts[0], data)
                 parsed_data = parsed_data
+                if output is  None or parsed_data is  None:
+                    raise Exception("LLM output is None")
+                outputs.append(output.content)
             else:
                 parsed_data = []
-                output = []
-                for p in prompt:
+                outputs = []
+                for p in prompts:
                     partial_output, partial_parsed_data = llm_invoke(model, p, data)
                     if output is not None and partial_parsed_data is not None:
                         parsed_data += partial_parsed_data
-                        output.append(partial_output.content)
-                output = "\n".join(output)
+                        outputs.append(partial_output.content)
         except Exception as e:
             logger.error (f"exception: {e}")
             num_attempts += 1
             continue
                 
-
+        output = "\n".join(outputs)
         logger.info (f"# output={output}")
 
     
@@ -200,9 +229,45 @@ def identify_devices(subset="medium", model=None, prompt=None, category="single"
 
         num_attempts = 0
 
+
+        # Save prompt and netlist data
+        Path(f"{metadata['prediction_dir']}/netlist_{i}").mkdir(parents=True, exist_ok=True)
+        with open(f"{metadata['prediction_dir']}/netlist_{i}/data.txt", "w") as fw:
+            fw.write(data.netlist)
+            fw.write("\n------------------------\n")
+            fw.write("hl1_gt: \n" + format_cluster_info(data.hl1_gt))
+            fw.write("\n\n")
+            fw.write("hl2_gt: \n" + format_cluster_info(data.hl2_gt))
+        
+        with open(f"{metadata['prediction_dir']}/netlist_{i}/gt_hl1.json", "w") as fw:
+            fw.write(json.dumps(data.hl1_gt, indent=2))
+        with open(f"{metadata['prediction_dir']}/netlist_{i}/gt_hl2.json", "w") as fw:
+            fw.write(json.dumps(data.hl2_gt, indent=2))
+
+        for prompt_index, prompt in enumerate(prompts):
+            with open(f"{metadata['prediction_dir']}/netlist_{i}/prompt_{prompt_index}.txt", "w") as fw:
+                fw.write(prompt.invoke(data.netlist).to_string())
+
+
+        # Save the output to a file
+        for output_index, output_data in enumerate(outputs):
+            with open(f"{metadata['prediction_dir']}/netlist_{i}/output_{output_index}.txt", "w") as fw:
+                fw.write(output_data)
+                fw.write("\n------------------------\n")
+
+        with open(f"{metadata['prediction_dir']}/netlist_{i}/parsed_data.json", "w") as fw:
+            fw.write(json.dumps(parsed_data, indent=2))
+
+        with open(f"{metadata['prediction_dir']}/netlist_{i}/eval_results.json", "w") as fw:
+            fw.write(json.dumps(eval_results, indent=2))
+
+
         i += 1
     #return average_metrics(results)
-    return results
+    if num_attempts < max_attempts:
+        return results
+    else:
+        return [{"Precision": 0, "Recall": 0, "F1-score": 0}]
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -218,18 +283,28 @@ def main(config : DictConfig) -> None:
         llm_models = config.all_llms
 
 
-    input("Press Enter to continue...")
+    # input("Press Enter to continue...")
 
     # get current time as a string for file name
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+    # create directory if it doesn't exist
+    if not os.path.exists(f"outputs/predictions/{now}"):
+        os.makedirs(f"outputs/predictions/{now}")
 
     for subset in config.benchmark_subsets:
         for model_id in llm_models:
             llm =load_ollama(model_id)
             for category in config.categories: #["single", "pair"]:
+                prediction_dir = f"outputs/predictions/{now}/subset_{subset}_{model_id}_{category}"
+                metadata = {'subset': subset, 'model_id': model_id, 'category': category, 'prediction_dir': prediction_dir}
+
+                if not os.path.exists(prediction_dir):
+                    os.makedirs(prediction_dir)
+
                 if category == "single":
                     prompt = create_prompt_hl1()
-                    result = average_metrics(identify_devices(subset, llm, prompt=[prompt], category=category))
+                    result = average_metrics(identify_devices(subset, llm, prompts=[prompt], category=category, metadata=metadata))
 
                 elif category == "pair":
                     if config.break_hl2_prompt:
@@ -242,10 +317,15 @@ def main(config : DictConfig) -> None:
                                 prompt = create_prompt_hl2_with_target_single_subcircuit_only(subcircuit_name=subcircuit_name, abbreviation=abbreviation)
                                 prompts.append(prompt)
 
-                        result = average_metrics(identify_devices(subset, llm, prompt=prompts, category=category))
+                        result = average_metrics(identify_devices(subset, llm, prompts=prompts, category=category,  metadata=metadata))
                     else:
-                        prompt = create_prompt_hl2()
-                        result = average_metrics(identify_devices(subset, llm, prompt=[prompt], category=category))
+                        if config.rule_provided:
+                            prompt = create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided()
+                            result = average_metrics(identify_devices(subset, llm, prompts=[prompt], category=category, metadata=metadata))
+
+                        else:
+                            prompt = create_prompt_hl2()
+                            result = average_metrics(identify_devices(subset, llm, prompts=[prompt], category=category, metadata=metadata))
 
                 logger.info (f"**result**: model={model_id},category={category}:   {result}")
 
