@@ -131,7 +131,13 @@ def create_prompt_hl2_with_target_single_subcircuit_only_and_fixed_rule_provided
     )
     return prompt
 
-def create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided():
+def create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided(config):
+    if config.rule_src is None:
+        knowedge_base = f"{get_knowledge_base()['DiffPair']}\n {get_knowledge_base()['CM']} \n {get_knowledge_base()['Inverter']}"
+    else:
+        with open(config.rule_src, "r") as f:
+            knowedge_base = f.read()
+        
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -142,7 +148,7 @@ def create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_pro
                 "- 'sub_circuit_name': the type of building block, represented using the corresponding acronym (DiffPair, CM, or Inverter)\n" +
                 "- 'transistor_names': a list of transistor names that belong to this building block\n" +
                 "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n\n" + 
-                f"Knowledge Base:\n {get_knowledge_base()['DiffPair']}\n {get_knowledge_base()['CM']} \n {get_knowledge_base()['Inverter']}"
+                f"Knowledge Base:\n ```\n{knowedge_base}\n```\n"
             ),
             ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
@@ -320,7 +326,7 @@ def main(config : DictConfig) -> None:
                         result = average_metrics(identify_devices(subset, llm, prompts=prompts, category=category,  metadata=metadata))
                     else:
                         if config.rule_provided:
-                            prompt = create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided()
+                            prompt = create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided(config)
                             result = average_metrics(identify_devices(subset, llm, prompts=[prompt], category=category, metadata=metadata))
 
                         else:
