@@ -119,12 +119,12 @@ def create_prompt_hl2_with_target_single_subcircuit_only_and_fixed_rule_provided
             (
                 "system",
                 f"You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract all available {subcircuit_name}s ({abbreviation}). " +
-                f"When answering the question, use the provided definition, connection rules, and identification procedure to identify {subcircuit_name}s. " +
+                f"When answering the question, incorporate the provided instructions and rules to improve the identification accuracy. " +
                 "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n" +
                 f"- 'sub_circuit_name': '{abbreviation}'\n" +
                 f"- 'transistor_names': a list of transistor names that belong to this {subcircuit_name}\n" +
                 "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n\n" +
-                f"Knowledge Base:\n{get_knowledge_base()[abbreviation]}\n"
+                f"Provided Instructions and Rules:\n{get_knowledge_base()[abbreviation]}\n"
             ),
             ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
@@ -143,12 +143,12 @@ def create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_pro
             (
                 "system",
                 "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify the following functional building blocks: Differential Pair (DiffPair), Current Mirror (CM), and Simple or Cascoded Analog Inverter (Inverter).\n" +
-                f"When answering the question, use the provided definition, connection rules, and procedure to identify these functional building blocks. " +
+                f"When answering the question, incorporate the provided instructions and rules to improve the identification accuracy. " +
                 "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n" +
                 "- 'sub_circuit_name': the type of building block, represented using the corresponding acronym (DiffPair, CM, or Inverter)\n" +
                 "- 'transistor_names': a list of transistor names that belong to this building block\n" +
                 "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n\n" + 
-                f"Knowledge Base:\n ```\n{knowedge_base}\n```\n"
+                f"Provided Instructions and Rules:\n ```\n{knowedge_base}\n```\n"
             ),
             ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
