@@ -24,6 +24,9 @@ all_llms:
   - "mistral:7b-instruct"
   - "mixtral:8x22b"
 
+proprietary_llms: 
+  - "deepseek"
+
 eval_llms: small
 
 benchmark_subsets:
