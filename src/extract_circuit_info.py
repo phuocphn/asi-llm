@@ -20,8 +20,8 @@ rename_map = {
 	"MosfetCascodedDifferentialPair": "DiffPair",
 	'MosfetSimpleCurrentMirror': 'CM',
 	'MosfetImprovedWilsonCurrentMirror': 'CM',
-	"MosfetCascodeAnalogInverterPmosCurrentMirrorLoad": "CM",
-	"MosfetCascodeAnalogInverterNmosCurrentMirrorLoad": "CM",
+	"MosfetCascodeAnalogInverterPmosCurrentMirrorLoad": "Inverter",
+	"MosfetCascodeAnalogInverterNmosCurrentMirrorLoad": "Inverter",
 	"MosfetFourTransistorCurrentMirror": "CM",
 	"MosfetCascodeCurrentMirror": "CM",
 	"MosfetWilsonCurrentMirror": "CM",
@@ -86,7 +86,7 @@ def get_hl1_cluster_labels(netlist_dir="data/netlist1/"):
 	root = tree.getroot()
 	subcircuits = root[1]
 	for cap in subcircuits.iter('capacitance'):
-		print (cap.attrib['type'].replace("/", ""))
+		# print (cap.attrib['type'].replace("/", ""))
 		for device in cap.iter('device'):
 			devices[cap.attrib['type'] + "_cap"].add(device.attrib['name'].replace("/", ""))
 	return [{'sub_circuit_name': k, 'transistor_names': list(v)} for k,v in devices.items()]
