@@ -1,204 +1,31 @@
-from pathlib import Path
-import transformers
-import torch
 import os
 import json
+import datetime
+import hydra
+from omegaconf import DictConfig, OmegaConf
+from pathlib import Path
+from loguru import logger
 
-from pydantic import BaseModel, Field
-from langchain_openai.chat_models.base import BaseChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
-
 from calc1 import compute_cluster_metrics, compute_cluster_metrics_hl1, average_metrics
 from src.netlist import SPICENetlist
 from src.kb import get_knowledge_base
-from utils import ppformat
-import hydra
-from omegaconf import DictConfig, OmegaConf
-
+from utils import ppformat, configure_logging
+from models import load_ollama, load_deepseek
+from prompt_collections.hl1 import (
+    create_prompt_hl1,
+)
+from prompt_collections.hl2 import (
+    create_prompt_hl2,
+    create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided,
+    create_prompt_hl2_with_target_single_subcircuit_only,
+    create_prompt_hl2_with_target_single_subcircuit_only_and_fixed_rule_provided,
+)
 
 # -----
-from loguru import logger
-import sys
-import datetime
-
-log_level = "DEBUG"
-log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-logfile = f"logs/{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}.txt"
-logger.remove()  # Why does it logs duplicated message? · Issue #208 · Delgan/loguru https://github.com/Delgan/loguru/issues/208
-logger.add(
-    sys.stderr,
-    level=log_level,
-    format=log_format,
-    colorize=True,
-    backtrace=True,
-    diagnose=True,
-)
-logger.add(
-    logfile,
-    level=log_level,
-    format=log_format,
-    colorize=False,
-    backtrace=True,
-    diagnose=True,
-)
 
 
-class AnswerFormat(BaseModel):
-    reasoning_steps: list[str] = Field(
-        description="The reasoning steps leading to the final conclusion"
-    )
-    number_of_diode_connected_transistors: int = Field(
-        description="The number of diode-connected transistors"
-    )
-    transistor_names: list[str] = Field(
-        description="The names of the diode-connected transistors"
-    )
-
-
-def load_ollama(model_id="deepseek-r1:70b"):
-    logger.info(f"use ollama with model id: {model_id}")
-    llm = ChatOllama(
-        model=model_id, temperature=0.0, max_tokens=15000, device=0  # 4096
-    )
-    return llm
-
-
-def loadopenai():
-    model_id = "gpt-4o"
-    openai_api_key = os.getenv("OPENAI_API_KEY", None)
-    if openai_api_key is None:
-        raise ValueError("OPENAI_API_KEY environment variable is not set")
-
-    llm = ChatOpenAI(
-        model=model_id,
-        temperature=0,
-        max_tokens=None,
-        timeout=None,
-        max_retries=2,
-        api_key=openai_api_key,
-    )
-    logger.info(f"use openai with model id: {model_id}")
-    return llm
-
-
-def load_deepseek():
-    model = BaseChatOpenAI(
-        model="deepseek-reasoner",
-        openai_api_key="?",
-        openai_api_base="https://api.deepseek.com",
-        max_tokens=4096,
-        temperature=0,
-    )
-    return model
-
-
-def create_prompt_hl1():
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract diode-connected transistors (MosfetDiode), load capacitors (load_cap), and compensation capacitors (compensation_cap). "
-                + "Provide your answer in JSON format.\n"
-                + "The output should be a list of dictionaries. Each dictionary must have two keys:\n"
-                + "- 'sub_circuit_name': the type of device, corresponding to one of the acronyms (MosfetDiode, load_cap, or compensation_cap)\n"
-                + "- 'transistor_names': a list of transistor names that belong to this building block\n"
-                + "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n",
-            ),
-            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
-        ]
-    )
-    return prompt
-
-
-def create_prompt_hl2():
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract functional building blocks commonly used in analog design. "
-                + "Specifically, look for the following structures: Differential Pair (DiffPair), Current Mirror (CM), and Simple or Cascoded Analog Inverter (Inverter).\n"
-                + "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n"
-                + "- 'sub_circuit_name': the type of building block, represented using the corresponding acronym (DiffPair, CM, or Inverter)\n"
-                + "- 'transistor_names': a list of transistor names that belong to this building block\n"
-                + "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n",
-            ),
-            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
-        ]
-    )
-    return prompt
-
-
-def create_prompt_hl2_with_target_single_subcircuit_only(
-    subcircuit_name="Current Mirror", abbreviation="CM"
-):
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                f"You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract all available {subcircuit_name} ({abbreviation}). "
-                + "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n"
-                + f"- 'sub_circuit_name': '{abbreviation}'\n"
-                + f"- 'transistor_names': a list of transistor names that belong to this {subcircuit_name}\n"
-                + "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n",
-            ),
-            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
-        ]
-    )
-    return prompt
-
-
-def create_prompt_hl2_with_target_single_subcircuit_only_and_fixed_rule_provided(
-    subcircuit_name="Current Mirror", abbreviation="CM"
-):
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                f"You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract all available {subcircuit_name}s ({abbreviation}). "
-                + f"When answering the question, incorporate the provided instructions and rules to improve the identification accuracy. "
-                + "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n"
-                + f"- 'sub_circuit_name': '{abbreviation}'\n"
-                + f"- 'transistor_names': a list of transistor names that belong to this {subcircuit_name}\n"
-                + "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n\n"
-                + f"Provided Instructions and Rules:\n{get_knowledge_base()[abbreviation]}\n",
-            ),
-            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
-        ]
-    )
-    return prompt
-
-
-def create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided(
-    config,
-):
-    if config.rule_src is None:
-        knowedge_base = f"{get_knowledge_base()['DiffPair']}\n {get_knowledge_base()['CM']} \n {get_knowledge_base()['Inverter']}"
-    else:
-        with open(config.rule_src, "r") as f:
-            knowedge_base = f.read()
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify the following functional building blocks: Differential Pair (DiffPair), Current Mirror (CM), and Simple or Cascoded Analog Inverter (Inverter).\n"
-                + f"When answering the question, incorporate the provided instructions and rules to improve the identification accuracy. "
-                + "Provide your output in JSON format as a list of dictionaries. Each dictionary must contain two keys:\n"
-                + "- 'sub_circuit_name': the type of building block, represented using the corresponding acronym (DiffPair, CM, or Inverter)\n"
-                + "- 'transistor_names': a list of transistor names that belong to this building block\n"
-                + "Wrap your response between <json> and </json> tags. Do not include any explanation, description, or comments.\n\n"
-                + f"Provided Instructions and Rules:\n ```\n{knowedge_base}\n```\n",
-            ),
-            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
-        ]
-    )
-    return prompt
-
-
-def llm_invoke(model, prompt, data):
+def llm_invoke(model, prompt, data: SPICENetlist) -> list[str, str]:
     try:
         # prompt = create_prompt_hl2()
         logger.info(prompt.invoke(data.netlist).to_string())
@@ -285,49 +112,38 @@ def identify_devices(
         num_attempts = 0
 
         # Save prompt and netlist data
-        Path(f"{metadata['prediction_dir']}/netlist_{i}").mkdir(
-            parents=True, exist_ok=True
-        )
-        with open(f"{metadata['prediction_dir']}/netlist_{i}/data.txt", "w") as fw:
+        save_dir = f"{metadata['llm_output_dir']}/netlist_{i}"
+
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
+        with open(f"{save_dir}/data.txt", "w") as fw:
             fw.write(data.netlist)
             fw.write("\n------------------------\n")
             fw.write("hl1_gt: \n" + ppformat(data.hl1_gt))
             fw.write("\n\n")
             fw.write("hl2_gt: \n" + ppformat(data.hl2_gt))
 
-        with open(f"{metadata['prediction_dir']}/netlist_{i}/gt_hl1.json", "w") as fw:
-            fw.write(json.dumps(data.hl1_gt, indent=2))
-        with open(f"{metadata['prediction_dir']}/netlist_{i}/gt_hl2.json", "w") as fw:
-            fw.write(json.dumps(data.hl2_gt, indent=2))
+        with open(f"{save_dir}/gt.json", "w") as fw:
+            content = {"hl1_gt": data.hl1_gt, "hl2_gt": data.hl2_gt}
+            fw.write(json.dumps(content, indent=2))
 
         for prompt_index, prompt in enumerate(prompts):
-            with open(
-                f"{metadata['prediction_dir']}/netlist_{i}/prompt_{prompt_index}.txt",
-                "w",
-            ) as fw:
+            with open(f"{save_dir}/prompt_{prompt_index}.txt", "w") as fw:
                 fw.write(prompt.invoke(data.netlist).to_string())
 
         # Save the output to a file
         for output_index, output_data in enumerate(outputs):
-            with open(
-                f"{metadata['prediction_dir']}/netlist_{i}/output_{output_index}.txt",
-                "w",
-            ) as fw:
+            with open(f"{save_dir}/output_{output_index}.txt", "w") as fw:
                 fw.write(output_data)
                 fw.write("\n------------------------\n")
 
-        with open(
-            f"{metadata['prediction_dir']}/netlist_{i}/parsed_data.json", "w"
-        ) as fw:
+        with open(f"{save_dir}/parsed_data.json", "w") as fw:
             fw.write(json.dumps(parsed_data, indent=2))
 
-        with open(
-            f"{metadata['prediction_dir']}/netlist_{i}/eval_results.json", "w"
-        ) as fw:
+        with open(f"{save_dir}/eval_results.json", "w") as fw:
             fw.write(json.dumps(eval_results, indent=2))
 
         i += 1
-    # return average_metrics(results)
+
     if num_attempts < max_attempts:
         return results
     else:
@@ -336,6 +152,19 @@ def identify_devices(
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(config: DictConfig) -> None:
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    save_dir = f"outputs/main/{now}"
+
+    # create directory if it doesn't exist
+    if not os.path.exists(save_dir):
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
+    if not os.path.exists(os.path.join(save_dir, "results")):
+        os.makedirs(os.path.join(save_dir, "results"))
+        Path(os.path.join(save_dir, "results")).mkdir(parents=True, exist_ok=True)
+    if not os.path.exists(os.path.join(save_dir, "llm_outputs")):
+        Path(os.path.join(save_dir, "llm_outputs")).mkdir(parents=True, exist_ok=True)
+
+    configure_logging(logdir=save_dir)
 
     logger.info(OmegaConf.to_yaml(config) + "\n\n\n")
 
@@ -350,15 +179,6 @@ def main(config: DictConfig) -> None:
     else:
         raise ValueError(f"Unknown llm_models: {config.eval_llms}")
 
-    # input("Press Enter to continue...")
-
-    # get current time as a string for file name
-    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-
-    # create directory if it doesn't exist
-    if not os.path.exists(f"outputs/predictions/{now}"):
-        os.makedirs(f"outputs/predictions/{now}")
-
     for subset in config.benchmark_subsets:
         for model_id in llm_models:
             if config.eval_llms == "proprietary" and model_id == "deepseek":
@@ -366,18 +186,16 @@ def main(config: DictConfig) -> None:
             else:
                 llm = load_ollama(model_id)
             for category in config.categories:  # ["single", "pair"]:
-                prediction_dir = (
-                    f"outputs/predictions/{now}/subset_{subset}_{model_id}_{category}"
-                )
+                llm_output_dir = f"{os.path.join(save_dir, 'llm_outputs')}/subset_{subset}_{model_id}_{category}"
+                if not os.path.exists(llm_output_dir):
+                    os.makedirs(llm_output_dir)
+
                 metadata = {
                     "subset": subset,
                     "model_id": model_id,
                     "category": category,
-                    "prediction_dir": prediction_dir,
+                    "llm_output_dir": llm_output_dir,
                 }
-
-                if not os.path.exists(prediction_dir):
-                    os.makedirs(prediction_dir)
 
                 if category == "single":
                     prompt = create_prompt_hl1()
@@ -420,7 +238,7 @@ def main(config: DictConfig) -> None:
                     else:
                         if config.rule_provided:
                             prompt = create_prompt_hl2_with_multiple_subcircuit_identification_and_fixed_rule_provided(
-                                config
+                                config.rule_src
                             )
                             result = average_metrics(
                                 identify_devices(
@@ -444,15 +262,10 @@ def main(config: DictConfig) -> None:
                                 )
                             )
 
-                logger.info(
-                    f"**result**: model={model_id},category={category}:   {result}"
-                )
-
-                # write result to file
-                with open(f"results/{now}.txt", "a") as fw:
-                    fw.write(
-                        f"model={model_id},subset={subset},category={category}:   {result}\n"
-                    )
+                content = f"**result**: model={model_id},category={category}:{result}"
+                logger.info(content)
+                with open(os.path.join(save_dir, "result.txt"), "a") as fw:
+                    fw.write(content + "\n")
 
 
 if __name__ == "__main__":
