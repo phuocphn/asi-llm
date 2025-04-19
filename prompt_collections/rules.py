@@ -109,22 +109,21 @@ def gen_instruction_prompt(
 
     prompt = PromptTemplate.from_template(
         f"""
-    You are an experienced analog designer. You are developing a instruction of how to identify {subcircuit_name} in flat SPICE netlists.
-    The instruction should be in a step-by-step format and will be used for other LLMs to find {subcircuit_name} in new unseen SPICE netlists.
-    
-    Given is a labeled example consisting of flat SPICE netlists and corresponding ground truth 
+    You are an experienced analog designer. You are developing an instruction on how to identify **{subcircuit_name}** in flat SPICE netlists.  
+    The instruction should be in a step-by-step format and will be used by other LLMs to find **{subcircuit_name}** in new, unseen SPICE netlists.
 
-    SPICE netlist: 
+    A labeled example is provided, consisting of a flat SPICE netlist and the corresponding ground truth:
+
+    SPICE netlist:  
     \n{netlist}         \n
 
-    Ground Truth:
-    In the given SPICE netlist, there are a total of {num_subcircuits} **{subcircuit_name}{postfix}**:: {ground_truth_str}
+    Ground Truth:  
+    In the given SPICE netlist, there are a total of {num_subcircuits} **{subcircuit_name}{postfix}**: {ground_truth_str}
 
     Your task is to:
-    - Analyze the example to extract reusable step-by-step instructions that can be used to identify the same {subcircuit_name} in new unseen SPICE netlists.
-    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between <instruction> and </instruction> tags. The instruction should be general and apply to new unseen SPICE netlists. 
-    - Don't include any explanation, description, or comments related to demonstration examples. 
-  
+    - Analyze the example to extract reusable, step-by-step instructions that can be used to identify the same **{subcircuit_name}** in new, unseen SPICE netlists.
+    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between `<instruction>` and `</instruction>` tags. The instruction should be general and applicable to new, unseen SPICE netlists.
+    - Do not include any explanation, description, or comments related to the demonstration example.
     """
     )
     return prompt
@@ -138,10 +137,10 @@ def update_instruction_prompt(
 
     prompt = PromptTemplate.from_template(
         f"""
-    You are an experienced analog designer. You are developing a instruction of how to identify {subcircuit_name} in flat SPICE netlists.
-    The instruction should be in a step-by-step format and will be used for other LLMs to find {subcircuit_name} in new unseen SPICE netlists.
-    
-    You are given two step-by-step instructions derived from the previous different examples:
+    You are an experienced analog designer. You are developing an instruction on how to identify **{subcircuit_name}** in flat SPICE netlists.  
+    The instruction should be in a step-by-step format and will be used by other LLMs to find **{subcircuit_name}** in new, unseen SPICE netlists.
+
+    You are given two step-by-step instructions derived from previous, different examples:
 
     **Instruction 1**:
     ```
@@ -154,10 +153,9 @@ def update_instruction_prompt(
     ```
   
     Your task is to:
-    - Analyze and combined these two instructions into a reusable step-by-step instruction that can be used to identify the same {subcircuit_name} in new unseen SPICE netlists.
-    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between <instruction> and </instruction> tags. The instruction should be general and apply to new unseen SPICE netlists. 
-    - Don't include any explanation, description, or comments related to demonstration examples. 
-  
+    - Analyze and combine these two instructions into a reusable, step-by-step instruction that can be used to identify **{subcircuit_name}** in new, unseen SPICE netlists.
+    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between `<instruction>` and `</instruction>` tags. The instruction should be general and applicable to new, unseen SPICE netlists.
+    - Do not include any explanation, description, or comments related to the demonstration examples.
     """
     )
     return prompt
@@ -171,10 +169,10 @@ def update_instruction_prompt_v2(
 
     prompt = PromptTemplate.from_template(
         f"""
-    You are an experienced analog designer. You are developing a instruction of how to identify {subcircuit_name} in flat SPICE netlists.
-    The instruction should be in a step-by-step format and will be used for other LLMs to find {subcircuit_name} in new unseen SPICE netlists.
-    
-    You are given two step-by-step instructions derived from the previous different examples:
+    You are an experienced analog designer. You are developing an instruction on how to identify **{subcircuit_name}** in flat SPICE netlists.  
+    The instruction should be in a step-by-step format and will be used by other LLMs to identify **{subcircuit_name}** in new, unseen SPICE netlists.
+
+    You are given two step-by-step instructions derived from previous, different examples:
 
     **Instruction 1**:
     ```
@@ -187,11 +185,10 @@ def update_instruction_prompt_v2(
     ```
   
     Your task is to:
-    - Analyze and combined these two instructions into a reusable step-by-step instruction that can be used to identify the same {subcircuit_name} in new unseen SPICE netlists.
-    - Don't include any duplicated information in the new instruction (e.g. duplicated step).
-    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between <instruction> and </instruction> tags. The instruction should be general and easy to follow by other large language models when applying to new unseen SPICE netlists. 
-    - Don't include any explanation, description, or comments related to demonstration examples. 
-  
+    - Analyze and combine these two instructions into a reusable, step-by-step instruction that can be used to identify the same **{subcircuit_name}** in new, unseen SPICE netlists.
+    - Do not include any duplicated information in the new instruction (e.g., duplicate steps).
+    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between `<instruction>` and `</instruction>` tags. The instruction should be general and easy for other large language models to follow when applied to new, unseen SPICE netlists.
+    - Do not include any explanation, description, or comments related to the demonstration examples.
     """
     )
     return prompt
