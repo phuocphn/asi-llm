@@ -202,15 +202,15 @@ def eval_rule(instruction, demonstration_examples, model):
 if __name__ == "__main__":
     demonstration_examples = get_demonstration_examples()
 
-    model_id = "llama3:70b"
+    model_id = "llama3.3:70b"
     model = load_ollama(model_id)
     name = f"{model_id}-{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
 
-    Path(f"data/gen_rules/{name}").mkdir(parents=True, exist_ok=True)
+    Path(f"outputs/gen_rules/{name}").mkdir(parents=True, exist_ok=True)
 
     log_level = "DEBUG"
     log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-    logfile = f"data/gen_rules/{name}/log.txt"
+    logfile = f"outputs/gen_rules/{name}/log.txt"
     logger.remove()  # Why does it logs duplicated message? · Issue #208 · Delgan/loguru https://github.com/Delgan/loguru/issues/208
     logger.add(
         sys.stderr,
@@ -235,12 +235,12 @@ if __name__ == "__main__":
 
     for step in range(5):
         if step == 0:
-            rule_fn = f"data/gen_rules/{name}/step-{-1}-out.md"
+            rule_fn = f"outputs/gen_rules/{name}/step-{-1}-out.md"
             gen_inital_rules(rule_fn, demonstration_examples, model)
             with open(rule_fn, "r") as f:
                 instruction = f.read()
 
-        rule_fn = f"data/gen_rules/{name}/step-{step-1}-out.md"
+        rule_fn = f"outputs/gen_rules/{name}/step-{step-1}-out.md"
         with open(rule_fn, "r") as f:
             instruction = f.read()
 
@@ -270,10 +270,10 @@ if __name__ == "__main__":
         chain = prompt | model
         output = chain.invoke({"instruction": instruction, "eval_log": eval_log})
         logger.info(output.content)
-        with open(f"data/gen_rules/{name}/step-{step}-out.md", "w") as f:
+        with open(f"outputs/gen_rules/{name}/step-{step}-out.md", "w") as f:
             f.write(output.content)
 
-        with open(f"data/gen_rules/{name}/step-{step}-info.md", "w") as f:
+        with open(f"outputs/gen_rules/{name}/step-{step}-info.md", "w") as f:
             f.write("\ncurrent metrics: " + str(metrics))
             f.write("\n--------------------------------\n")
             f.write(
@@ -288,14 +288,14 @@ if __name__ == "__main__":
     logger.info("Using instruction id: " + str(instruction_id))
     logger.info("---------------------------")
 
-    subset = "small"
+    subset = "medium"
     category = "pair"
-    prediction_dir = f"data/gen_rules/{name}/subset_{subset}_{model_id}_{category}"
+    prediction_dir = f"outputs/gen_rules/{name}/subset_{subset}_{model_id}_{category}"
     metadata = {
         "subset": subset,
         "model_id": model_id,
         "category": category,
-        "prediction_dir": prediction_dir,
+        "llm_output_dir": prediction_dir,
     }
 
     prompt = create_prompt_hl2_multiple_subcircuits_with_rule_provided_v2(
