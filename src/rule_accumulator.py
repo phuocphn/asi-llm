@@ -35,125 +35,30 @@ import datetime
 
 
 # -----
-
-rename_map = {
-    "MosfetCascodedPMOSAnalogInverter": "Inverter",
-    "MosfetCascodedNMOSAnalogInverter": "Inverter",
-    "MosfetCascodedAnalogInverter": "Inverter",
-    "MosfetCascodeAnalogInverterPmosDiodeTransistor": "Inverter",
-    "MosfetCascodeAnalogInverterNmosDiodeTransistor": "Inverter",
-    "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor": "Inverter",
-    "MosfetCascodePMOSAnalogInverterOneDiodeTransistor": "Inverter",
-    "MosfetCascodePMOSAnalogInverterCurrentMirrorLoad": "Inverter",
-    "MosfetCascodeNMOSAnalogInverterCurrentMirrorLoad": "Inverter",
-    "MosfetCascodeAnalogInverterTwoCurrentMirrorLoads": "Inverter",
-    "MosfetAnalogInverter": "Inverter",
-    "MosfetDifferentialPair": "DiffPair",
-    "MosfetFoldedCascodeDifferentialPair": "DiffPair",
-    "MosfetCascodedDifferentialPair": "DiffPair",
-    "MosfetSimpleCurrentMirror": "CM",
-    "MosfetImprovedWilsonCurrentMirror": "CM",
-    "MosfetCascodeAnalogInverterPmosCurrentMirrorLoad": "CM",
-    "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad": "CM",
-    "MosfetFourTransistorCurrentMirror": "CM",
-    "MosfetCascodeCurrentMirror": "CM",
-    "MosfetWilsonCurrentMirror": "CM",
-    "MosfetWideSwingCascodeCurrentMirror": "CM",
-    "InverterPmosCurrentMirrorLoad": "CM",
-    "CapacitorArray": "cap",
-    "MosfetDiodeArray": "MosfetDiode",
-    "MosfetNormalArray": "Mosfet",
-}
-rename_map = {k: 0 for k, _ in rename_map.items()}
+from collections import defaultdict
 
 
-def check_add(list_subcircuits):
-    """Check if any of the subcircuits in could be used as demonstration circuits.
-
-    :param list_subcircuits: _description_
-    :return: _description_
-    """
-    should_add = False
-    global rename_map
-    for sc in list_subcircuits:
-        if sc in rename_map and rename_map[sc] == 0:
-            rename_map[sc] = 1
-            should_add = True
-    return should_add
-
-
-def get_demonstration_examples():
+def get_demonstration_examples(samples=[56, 49, 51]):
     all_examples = []
+    subcircuit_names = set()
+
     for dir in ["small", "medium"]:
-        for i in range(1, 101):
-            netlist_dir = f"data/benchmark-asi-100-train/{dir}/{i}/"
+        for i in samples:  # range(1, 101):
+            netlist_dir = f"data/asi-fuboco-train/{dir}/{i}/"
             tree = ET.parse(
                 glob.glob(os.path.join(netlist_dir, "structure_result.xml"))[0]
             )
             root = tree.getroot()
             subcircuits = root[1]
 
-            all_subcircuits = []
             for sc in subcircuits:
-                circuit_name = sc.attrib["name"]
-                circuit_name = circuit_name[: circuit_name.find("[")]
-                all_subcircuits.append(circuit_name)
+                subcircuit_name = sc.attrib["name"]
+                subcircuit_name = subcircuit_name[: subcircuit_name.find("[")]
+                subcircuit_names.add(subcircuit_name)
+            all_examples.append(netlist_dir)
 
-            if check_add(all_subcircuits):
-                all_examples.append(netlist_dir)
-
+    assert len(subcircuit_names) == 21, f"number of subcircuit: {len(subcircuit_names)}"
     return all_examples
-
-
-def check_cover(examples):
-    flag_indicator = {
-        subcircuit: 0
-        for subcircuit in [
-            [
-                "MosfetCascodedPMOSAnalogInverter",
-                "MosfetCascodedNMOSAnalogInverter",
-                "MosfetCascodedAnalogInverter",
-                "MosfetCascodeAnalogInverterPmosDiodeTransistor",
-                "MosfetCascodeAnalogInverterNmosDiodeTransistor",
-                "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
-                "MosfetCascodePMOSAnalogInverterOneDiodeTransistor",
-                "MosfetCascodePMOSAnalogInverterCurrentMirrorLoad",
-                "MosfetCascodeNMOSAnalogInverterCurrentMirrorLoad",
-                "MosfetCascodeAnalogInverterTwoCurrentMirrorLoads",
-                "MosfetAnalogInverter",
-                "MosfetDifferentialPair",
-                "MosfetFoldedCascodeDifferentialPair",
-                "MosfetCascodedDifferentialPair",
-                "MosfetSimpleCurrentMirror",
-                "MosfetImprovedWilsonCurrentMirror",
-                "MosfetCascodeAnalogInverterPmosCurrentMirrorLoad",
-                "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
-                "MosfetFourTransistorCurrentMirror",
-                "MosfetCascodeCurrentMirror",
-                "MosfetWilsonCurrentMirror",
-                "MosfetWideSwingCascodeCurrentMirror",
-                "InverterPmosCurrentMirrorLoad",
-                "CapacitorArray",
-                "MosfetDiodeArray",
-                "MosfetNormalArray",
-            ]
-        ]
-    }
-
-    for ex in examples:
-        tree = ET.parse(glob.glob(os.path.join(ex, "structure_result.xml"))[0])
-        root = tree.getroot()
-        subcircuits = root[1]
-
-        all_subcircuits = []
-        for sc in subcircuits:
-            circuit_name = sc.attrib["name"]
-            circuit_name = circuit_name[: circuit_name.find("[")]
-            all_subcircuits.append(circuit_name)
-
-            flag_indicator[circuit_name] = 1
-
-    return 0 not in flag_indicator.values()
 
 
 def create_examples(demonstration_examples):
@@ -226,6 +131,7 @@ def model_call(model, prompt, data: SPICENetlist) -> list[str, str]:
 if __name__ == "__main__":
     demonstration_examples = get_demonstration_examples()
 
+    logger.info(f"len of demonstration examples: {demonstration_examples}")
     model_id = "llama3.3:70b"
     model = load_ollama(model_id)
     name = f"{model_id}-{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
@@ -235,9 +141,15 @@ if __name__ == "__main__":
     configure_logging(logdir=working_dir)
     log_level = "DEBUG"
 
-    subcircuit = "Current Mirror"
+    subcircuit = "Inverter"
     instruction = f"Generate a rule for {subcircuit} subcircuits"
     logger.info(f"Instruction: {instruction}")
+
+    subcircuit_abbrev_map = {
+        "Current Mirror": "CM",
+        "Differential Pair": "DiffPair",
+        "Inverter": "Inverter",
+    }
 
     for index, ex in enumerate(demonstration_examples):
         data = SPICENetlist(ex)
@@ -245,7 +157,7 @@ if __name__ == "__main__":
         ground_truth = [
             sc["transistor_names"]
             for sc in data.hl2_gt
-            if sc["sub_circuit_name"] == "CM"
+            if sc["sub_circuit_name"] == subcircuit_abbrev_map[subcircuit]
         ]
 
         prompt = gen_instruction_prompt(
@@ -285,3 +197,6 @@ if __name__ == "__main__":
                 os.path.join(working_dir, f"instruction-{index}-revised.md"), "w"
             ) as f:
                 f.write(parsed_data)
+
+    with open(os.path.join(working_dir, f"instruction-{index}-revised.md"), "r") as f:
+        final_generated_instruction = f.read()
