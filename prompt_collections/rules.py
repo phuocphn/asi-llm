@@ -192,3 +192,35 @@ def update_instruction_prompt_v2(
     """
     )
     return prompt
+
+
+def gen_python_script(
+    subcircuit_name: str = "Current Mirror",
+    instruction: str = None,
+    testcase_netlist: str = None,
+    testcase_expected: str = None,
+):
+    prompt = PromptTemplate.from_template(
+        f"""
+    You are an experienced Python programmer working on identifying **{subcircuit_name}s** in a SPICE netlist.  
+    Your task is to convert the following instruction for identifying **{subcircuit_name}s** into a Python script.  
+    The goal is to extract a list of all available **{subcircuit_name}s** from a new, unseen SPICE netlist.
+
+    **Instruction**  
+    ```
+    {instruction}
+    ```
+
+    **Test Case**  
+    **Input SPICE Netlist**  
+    ```
+    {testcase_netlist}
+    ```
+
+    **Expected Output**  (order of list elements does not matter)  
+    ```
+    {testcase_expected}
+    ```
+    """
+    )
+    return prompt
