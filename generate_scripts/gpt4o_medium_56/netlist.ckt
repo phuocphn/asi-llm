@@ -1,0 +1,24 @@
+c1 a out
+m1 b ibias ground ground nmos
+m2 c ibias ground ground nmos
+m3 d ibias ground ground nmos
+m4 e b supply supply pmos
+m5 f e g g nmos
+m6 a e h h nmos
+m7 f d i i pmos
+m8 i f supply supply pmos
+m9 a d j j pmos
+m10 j f supply supply pmos
+m11 k ibias ground ground nmos
+m12 g in1 k k nmos
+m13 h in2 k k nmos
+c2 out ground
+m14 out a ground ground nmos
+m15 out c l l pmos
+m16 l l supply supply pmos
+m17 e e k k nmos
+m18 ibias ibias ground ground nmos
+m19 b b supply supply pmos
+m20 c c m m pmos
+m21 m l supply supply pmos
+m22 d d supply supply pmos
