@@ -175,6 +175,7 @@ cython_debug/
 logs
 data/benchmark-asi-100
 data/benchmark-asi-100-train
+data/asi-fuboco-*
 data/gen_rules/
 results
 outputs
