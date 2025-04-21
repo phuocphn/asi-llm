@@ -132,24 +132,24 @@ if __name__ == "__main__":
     demonstration_examples = get_demonstration_examples()
 
     logger.info(f"len of demonstration examples: {demonstration_examples}")
-    model_id = "llama3.3:70b"
-    model = load_ollama(model_id)
-    name = f"{model_id}-{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
+    subcircuit = "Current Mirror"
+    subcircuit_abbrev_map = {
+        "Current Mirror": "CM",
+        "Differential Pair": "DiffPair",
+        "Inverter": "Inverter",
+    }
+
+    model_id = "gpt-4o"
+    model = load_openai(model_id)
+    name = f"{model_id}-{subcircuit_abbrev_map[subcircuit]}-{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
 
     working_dir = f"outputs/rule_accumulator/{name}"
     Path(working_dir).mkdir(parents=True, exist_ok=True)
     configure_logging(logdir=working_dir)
     log_level = "DEBUG"
 
-    subcircuit = "Inverter"
     instruction = f"Generate a rule for {subcircuit} subcircuits"
     logger.info(f"Instruction: {instruction}")
-
-    subcircuit_abbrev_map = {
-        "Current Mirror": "CM",
-        "Differential Pair": "DiffPair",
-        "Inverter": "Inverter",
-    }
 
     for index, ex in enumerate(demonstration_examples):
         data = SPICENetlist(ex)
