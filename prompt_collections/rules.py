@@ -224,3 +224,56 @@ def gen_python_script(
     """
     )
     return prompt
+
+
+def gen_python_script_v2(
+    subcircuit_name: str = "Current Mirror",
+    instruction: str = None,
+    testcase: str = None,
+):
+    prompt = PromptTemplate.from_template(
+        f"""
+    You are an experienced Python programmer working on identifying **{subcircuit_name}s** in a SPICE netlist.  
+    Your task is to convert the following instruction for identifying **{subcircuit_name}s** into a Python script.  
+    The goal is to extract a list of all available **{subcircuit_name}s** from a new, unseen SPICE netlist.
+    For each test case, make sure the returned output matches expected output.
+
+    **Instruction**  
+    ```
+    {instruction}
+    ```
+
+    {testcase}
+    
+    Let's think step by step.
+    """
+    )
+    return prompt
+
+
+def gen_python_script_v3(
+    subcircuit_name: str = "Current Mirror",
+    instruction: str = None,
+    testcase: str = None,
+):
+    prompt = PromptTemplate.from_template(
+        f"""
+    You are an experienced Python programmer working on identifying **{subcircuit_name}s** in a SPICE netlist.  
+    You are given the following step-by-step instruction on how to identify **{subcircuit_name}s** in a SPICE netlist.
+
+    **Instruction**  
+    ```
+    {instruction}
+    ```
+
+    {testcase}
+    
+    Your task is to:
+    - Convert the given instruction for identifying **{subcircuit_name}s** into a Python script.  
+    - The generated Python script should extract a list of all available **{subcircuit_name}s** from a new, unseen SPICE netlist.
+    - For each given test case, write an assertion to ensure the returned output matches the expected output.
+
+    Let's think step by step.
+    """
+    )
+    return prompt
