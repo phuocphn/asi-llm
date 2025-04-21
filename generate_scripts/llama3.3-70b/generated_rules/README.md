@@ -1,1 +1,0 @@
-asi-fuboco0train/small/51 is used to generate rules.
