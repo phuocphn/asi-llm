@@ -277,3 +277,80 @@ def gen_python_script_v3(
     """
     )
     return prompt
+
+
+def gen_instruction_hl1_prompt(
+    netlist: str = None,
+    hl1_gt: list[dict] = None,
+):
+    num_diode_connected_trans = len(
+        [d for d in hl1_gt if d["sub_circuit_name"] == "MosfetDiode"]
+    )
+    if num_diode_connected_trans > 1:
+        postfix_diode_connected_tran = "s"
+    else:
+        postfix_diode_connected_tran = ""
+    print(hl1_gt)
+    ground_truth_diode_connected_trans_str = ", ".join(
+        [
+            str(d["transistor_names"])
+            for d in hl1_gt
+            if d["sub_circuit_name"] == "MosfetDiode"
+        ]
+    )
+    # ---
+
+    num_load_caps = len([d for d in hl1_gt if d["sub_circuit_name"] == "load_cap"])
+    if num_load_caps > 1:
+        postfix_load_caps = "s"
+    else:
+        postfix_load_caps = ""
+
+    ground_truth_load_caps = ", ".join(
+        [
+            str(d["transistor_names"])
+            for d in hl1_gt
+            if d["sub_circuit_name"] == "load_cap"
+        ]
+    )
+
+    # ---
+    num_compensation_caps = len(
+        [d for d in hl1_gt if d["sub_circuit_name"] == "compensation_cap"]
+    )
+    if num_compensation_caps > 1:
+        postfix_compensation_caps = "s"
+    else:
+        postfix_compensation_caps = ""
+
+    ground_truth_compensation_caps_str = ", ".join(
+        [
+            str(d["transistor_names"])
+            for d in hl1_gt
+            if d["sub_circuit_name"] == "compensation_cap"
+        ]
+    )
+
+    prompt = PromptTemplate.from_template(
+        f"""
+    You are an experienced analog designer. You are developing an instruction on how to identify diode-connected transistors and load/compensation capacitors in flat SPICE netlists.  
+    The instruction should be in a step-by-step format and will be used by other LLMs to find diode-connected transistors and load/compensation capacitors in new, unseen SPICE netlists.
+
+    A labeled example is provided, consisting of a flat SPICE netlist and the corresponding ground truth:
+
+    SPICE netlist:  
+    \n{netlist}         \n
+
+    Ground Truth:  
+    - In the given SPICE netlist, there are a total of {num_diode_connected_trans} **diode-connected transistor{postfix_diode_connected_tran}**: {ground_truth_diode_connected_trans_str}
+    - In the given SPICE netlist, there are a total of {num_load_caps} **load capacitor{postfix_load_caps}**: {ground_truth_load_caps}
+    - In the given SPICE netlist, there are a total of {num_compensation_caps} **compensation capacitor{postfix_compensation_caps}**: {ground_truth_compensation_caps_str}
+
+    Your task is to:
+    - Analyze the example to extract reusable, step-by-step instructions that can be used to identify diode-connected transistors and load/compensation capacitors in new, unseen SPICE netlists.
+    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between `<instruction>` and `</instruction>` tags. The instruction should be general and applicable to new, unseen SPICE netlists.
+    - Do not include any explanation, description, or comments related to the demonstration example.
+    """
+    )
+    return prompt
+

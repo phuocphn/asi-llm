@@ -11,6 +11,7 @@ from prompt_collections.rules import (
     gen_instruction_prompt,
     update_instruction_prompt,
     update_instruction_prompt_v2,
+    gen_instruction_hl1_prompt,
 )
 
 from prompt_collections.hl2 import (
@@ -133,10 +134,12 @@ if __name__ == "__main__":
 
     logger.info(f"len of demonstration examples: {demonstration_examples}")
     subcircuit = "Current Mirror"
+    subcircuit = "HL1"
     subcircuit_abbrev_map = {
         "Current Mirror": "CM",
         "Differential Pair": "DiffPair",
         "Inverter": "Inverter",
+        "HL1": "HL1",
     }
 
     model_id = "gpt-4o"
@@ -159,12 +162,16 @@ if __name__ == "__main__":
             for sc in data.hl2_gt
             if sc["sub_circuit_name"] == subcircuit_abbrev_map[subcircuit]
         ]
+        prompt_fn = gen_instruction_hl1_prompt  # or gen_instruction_prompt
 
         prompt = gen_instruction_prompt(
             subcircuit_name=subcircuit,
             netlist=data.netlist,
             ground_truth=ground_truth,
         )
+        # or
+        prompt = gen_instruction_hl1_prompt(netlist=data.netlist, hl1_gt=data.hl1_gt)
+
         logger.info(prompt.invoke({}).to_string())
 
         output, parsed_data = model_call(model, prompt, data)
@@ -184,8 +191,15 @@ if __name__ == "__main__":
             with open(os.path.join(working_dir, fn), "r") as f:
                 prev_instruction = f.read()
 
+            if subcircuit == "HL1":
+                subcircuit_name = (
+                    "diode-connected transistors and load/compensation capacitors"
+                )
+            else:
+                subcircuit_name = subcircuit
+
             prompt = update_instruction_prompt_v2(
-                subcircuit_name=subcircuit,
+                subcircuit_name=subcircuit_name,
                 instruction_1=prev_instruction,
                 instruction_2=parsed_data,
             )
