@@ -102,5 +102,69 @@ def gen_prompt(instruction_path, subcircuit_name, testcase_netlist, call_model):
         print(output)
 
 
+@click.command()
+@click.option(
+    "--instruction_path",
+    default="/tmp/abc.txt",
+    help="path to the markdown instruction file.",
+)
+@click.option(
+    "--call_model",
+    default=False,
+    prompt="should call model and get the output?",
+    help="enable invoking model (gpt-4o).",
+)
+def gen_hl1_prompt(instruction_path, call_model):
+    print(f"instruction path: {instruction_path}")
+
+    with open(instruction_path, "r") as f:
+        generated_instruction = f.read()
+
+    testcases = [
+        # "data/asi-fuboco-train/small/56/",
+        # "data/asi-fuboco-train/small/49/",
+        "data/asi-fuboco-train/small/51/",
+        # "data/asi-fuboco-train/medium/56/",
+        # "data/asi-fuboco-train/medium/49/",
+        # "data/asi-fuboco-train/medium/51/",
+    ]
+    testcase_str = ""
+    for i, testcase_netlist in enumerate(testcases):
+        data = SPICENetlist(testcase_netlist)
+
+        ground_truth = str(
+            json.dumps([sc for sc in data.hl1_gt])
+            .replace('"', "'")
+            .replace("{", "{{")
+            .replace("}", "}}")
+        )
+        test = f"""
+        **Test Case {i+1}**  
+        **Input SPICE Netlist**  
+        ```
+        {data.netlist}
+        ```
+
+        **Expected Output**  (order of list elements does not matter)  
+        ```
+        {ground_truth}
+        ```
+        ----\n
+        """
+        testcase_str += test
+
+    prompt = gen_python_script_v3(
+        instruction=generated_instruction,
+        subcircuit_name="diode-connected transistor and load/compensation capacitor",  # no "s" here!
+        testcase=testcase_str,
+    )
+
+    print(prompt.invoke({}).to_string())
+    if call_model:
+        model = load_openai(model_name="gpt-4.1")
+        output = (prompt | model).invoke({}).content
+        print(output)
+
+
 if __name__ == "__main__":
     gen_prompt()
