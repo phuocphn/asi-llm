@@ -354,3 +354,22 @@ def gen_instruction_hl1_prompt(
     )
     return prompt
 
+
+def update_python_script(
+    error_message: str = "Traceback Error: ....",
+):
+    prompt = PromptTemplate.from_template(
+        f"""
+    When I executed the provided Python code, I got the following error message:
+
+    **Error Message**  
+    ```
+    {error_message}
+    ```
+
+    
+    Your task is to fix any bugs, wrong logics in the previous generated Python code, so that the returned output matches the expected output.
+    Let's think step by step.
+    """
+    )
+    return prompt
