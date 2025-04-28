@@ -27,6 +27,8 @@ allowed_subcircuit_names = {
     "MosfetCascodePMOSAnalogInverterOneDiodeTransistor": 34,
     "MosfetCascodeAnalogInverterNmosDiodeTransistor": 70,
     "MosfetCascodedAnalogInverter": 88,
+    "MosfetNmosDiodeAnalogInverter": 100,
+    "MosfetPmosDiodeAnalogInverter": 100,
     # "MosfetCascodeAnalogInverterPmosCurrentMirrorLoad": 9,
     # "MosfetCascodeNMOSAnalogInverterCurrentMirrorLoad": 4,
     # "MosfetCascodeAnalogInverterTwoCurrentMirrorLoads": 2,
@@ -101,7 +103,7 @@ def make_benchmark():
         # 'max_fully_differential_three_stage_opamps':  [50, f"{netlist_dir}/FullyDifferentialOpAmps/three_stage_*.ckt"],
         "max_single_output_three_stage_opamps": [
             50,
-            f"/mnt/home/pham/code/maga/outputs/TopologyGen/SingleOutputOpAmps/three_stage*.ckt",
+            f"/mnt/home/pham/code/outputs_0/outputs/TopologyGen-27.04.25/SingleOutputOpAmps/three_stage*.ckt",
         ],
     }
 
@@ -135,7 +137,7 @@ def make_benchmark():
             devices = get_devices(f)
             num_transistors = len(devices["transistors"])
             if (
-                (num_transistors >= 20 and num_transistors < 40)
+                (num_transistors >= 20 and num_transistors < 30)
                 and opamp_count[opamp_set] < settings[0]
                 and get_all_subcircuit_names(f).issubset(allowed_subcircuit_names)
             ):
