@@ -32,7 +32,7 @@ def assign_cluster_ids(subcircuits):
                 transistor_to_cluster[transistor.lower()] = {
                     "cluster_names": [subcircuit["sub_circuit_name"]],
                     "cluster_ids": [cluster_id],
-                }  # ([subcircuit['sub_circuit_name']], cluster_id)
+                }
             else:
                 new_cluster_names = list(
                     set(
@@ -49,7 +49,7 @@ def assign_cluster_ids(subcircuits):
                 transistor_to_cluster[transistor.lower()] = {
                     "cluster_names": new_cluster_names,
                     "cluster_ids": new_cluster_ids,
-                }  # = (new_cluster, cluster_id)
+                }
 
         cluster_id += 1
     return transistor_to_cluster
@@ -95,65 +95,50 @@ def compute_cluster_metrics(predicted, ground_truth):
     logger.debug(f"{gt_cluster_id_mapping=}")
     logger.debug(f"{pred_cluster_id_mapping=}")
 
+    is_hierarchical_level1 = ground_truth[0]["sub_circuit_name"] in [
+        "MosfetDiode",
+        "load_cap",
+        "compensation_cap",
+    ]
+
     correct_assignments = defaultdict(int)
     for t in pred_mapping:
         if t in gt_mapping:
-            if pred_mapping[t]["cluster_names"][0] in gt_mapping[t]["cluster_names"]:
+            if is_hierarchical_level1:
                 correct_assignments[t] = 1
-    logger.debug(f"**before** pair-wise check: {correct_assignments=}")
-
-    for _, list_transistors in pred_cluster_id_mapping.items():
-        for t in list_transistors:
-            for tt in reversed(list_transistors):
-                if t == tt:
-                    continue
-
-                if t not in gt_mapping or tt not in gt_mapping:
-                    correct_assignments[t] = 0
-                    correct_assignments[tt] = 0
-                    continue
-
+            else:
                 if (
-                    len(
-                        set(gt_mapping[t]["cluster_ids"])
-                        & set(gt_mapping[tt]["cluster_ids"])
-                    )
-                    == 0
+                    pred_mapping[t]["cluster_names"][0]
+                    in gt_mapping[t]["cluster_names"]
                 ):
-                    # logger.debug(f"{set(gt_mapping[t]['cluster_ids'])=}")
-                    # logger.debug(f"{set(gt_mapping[list_transistors[i+1]]['cluster_ids'])=}")
-                    correct_assignments[t] = 0
-                    correct_assignments[tt] = 0
+                    correct_assignments[t] = 1
 
-    logger.debug(f"**after** pair-wise check: {correct_assignments=}")
+    if not is_hierarchical_level1:
+        logger.debug(f"**before** pair-wise check: {correct_assignments=}")
+        for _, list_transistors in pred_cluster_id_mapping.items():
+            for t in list_transistors:
+                for tt in reversed(list_transistors):
+                    if t == tt:
+                        continue
 
-    num_correct_assignments = sum([c for _, c in correct_assignments.items()])
+                    if t not in gt_mapping or tt not in gt_mapping:
+                        correct_assignments[t] = 0
+                        correct_assignments[tt] = 0
+                        continue
 
-    # Precision: Fraction of correctly assigned transistors in the predicted set
-    precision = num_correct_assignments / len(pred_mapping) if pred_mapping else 0
+                    if (
+                        len(
+                            set(gt_mapping[t]["cluster_ids"])
+                            & set(gt_mapping[tt]["cluster_ids"])
+                        )
+                        == 0
+                    ):
+                        # logger.debug(f"{set(gt_mapping[t]['cluster_ids'])=}")
+                        # logger.debug(f"{set(gt_mapping[list_transistors[i+1]]['cluster_ids'])=}")
+                        correct_assignments[t] = 0
+                        correct_assignments[tt] = 0
 
-    # Recall: Fraction of correctly assigned transistors in the ground truth set
-    recall = num_correct_assignments / len(gt_mapping) if gt_mapping else 0
-
-    # F1-score: Harmonic mean of precision and recall
-    f1_score = (
-        (2 * precision * recall) / (precision + recall)
-        if (precision + recall) > 0
-        else 0
-    )
-
-    return {"Precision": precision, "Recall": recall, "F1-score": f1_score}
-
-
-def compute_cluster_metrics_hl1(predicted, ground_truth):
-    """Compute correctness of transistor assignments with subcircuit type consideration."""
-    pred_mapping = assign_cluster_ids(predicted)
-    gt_mapping = assign_cluster_ids(ground_truth)
-
-    correct_assignments = defaultdict(int)
-    for t in pred_mapping:
-        if t in gt_mapping:
-            correct_assignments[t] = 1
+        logger.debug(f"**after** pair-wise check: {correct_assignments=}")
 
     num_correct_assignments = sum([c for _, c in correct_assignments.items()])
 
