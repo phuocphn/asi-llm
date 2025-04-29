@@ -7,7 +7,30 @@ import pandas as pd
 from src.netlist import SPICENetlist
 
 
-def get_netlist_list_by_subcircuit_names(data_path="data/asi-fuboco-test"):
+def get_rawlabels_statistic(data_path="data/asi-fuboco-test"):
+    instance_counts = defaultdict(int)
+    circuit_counts = defaultdict(set)
+    for dir in ["small", "medium", "large"]:
+
+        for i in range(1, 101):
+            netlist_dir = f"{data_path}/{dir}/{i}/"
+
+            tree = ET.parse(
+                glob.glob(os.path.join(netlist_dir, "structure_result.xml"))[0]
+            )
+            root = tree.getroot()
+            subcircuits = root[1]
+
+            for sc in subcircuits:
+                circuit_name = sc.attrib["name"]
+                circuit_name = circuit_name[: circuit_name.find("[")]
+                circuit_counts[circuit_name].add(netlist_dir)
+                instance_counts[circuit_name] += 1
+
+    return instance_counts, circuit_counts
+
+
+def get_labels_statistic(data_path="data/asi-fuboco-test"):
     instance_counts = defaultdict(int)
     circuit_counts = defaultdict(set)
     for dir in ["small", "medium", "large"]:
@@ -55,7 +78,7 @@ def get_netlist_list_by_subcircuit_names(data_path="data/asi-fuboco-test"):
 if __name__ == "__main__":
     """Get list of netlist contains particular subcircuit name"""
 
-    instance_counts, circuit_counts = get_netlist_list_by_subcircuit_names(
+    instance_counts, circuit_counts = get_labels_statistic(
         data_path="data/asi-fuboco-test"
     )
     print("num of subcircuit: ", len(instance_counts.keys()))
@@ -79,3 +102,7 @@ if __name__ == "__main__":
     for sc in eval_subcircuits:
         print(f"Circuits contain `{sc}`: \n")
         print(circuit_counts[sc])
+
+    print("raw subcircuit labels:")
+    _, circuit_counts = get_rawlabels_statistic(data_path="data/asi-fuboco-test")
+    print(circuit_counts.keys())
