@@ -6,6 +6,7 @@ from src.extract_circuit_info import (
 )
 from mask_net import get_masked_netlist
 from collections import defaultdict
+from typing import Dict, Tuple, List
 
 
 class SPICENetlist:
@@ -16,7 +17,7 @@ class SPICENetlist:
         self.hl3_gt = get_hl3_cluster_labels(netlist_path)
 
     @property
-    def get_graph_labels(self):
+    def get_graph_labels(self) -> Dict[str, Tuple[List, List, List]]:
         labels = defaultdict(list)
         subcircuit_name_to_label_id_mappings = {
             "MosfetDiode": 1,
