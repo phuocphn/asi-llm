@@ -7,15 +7,20 @@ data = SPICENetlist(f"data/asi-fuboco-test/small/1/")
 
 print("netlist:", data.netlist)
 
-# ground truth of hierarchial level 1 (HL1):  devices (diode-connected transistors, load/comprensation caps)
+# Hierarchical Level 1 Ground Truth:
+# Valid keys: "MosfetDiode", "load_cap", "compesation_cap"
 print("hl1_gt:", data.hl1_gt)
 
-# ground truth of hierarchial level 21 (HL2):   structure pair (diffpair, cm, inverter)
+# Hierarchical Level 2 Ground Truth:
+# Valid keys: "CM", "DiffPair", "Inverter"
 print("hl2_gt:", data.hl2_gt)
+
+# Hierarchical Level 3 Ground Truth:
+# Valid keys: "firstStage", "secondStage", "thirdStage", "loadPart", "biasPart", "feedBack"
 print("hl3_gt:", data.hl3_gt)
 
 
-hl1prediction = [
+hl1_prediction = [
     {"sub_circuit_name": "MostfetDiode", "transistor_names": ["m11", "m12", "m8"]},
     {"sub_circuit_name": "load_cap", "transistor_names": ["m21", "m22"]},
     {"sub_circuit_name": "compensation_cap", "transistor_names": ["m29", "m30", "m31"]},
@@ -32,6 +37,19 @@ hl2_prediction = [
 hl3_prediction = [
     {"sub_circuit_name": "firstStage", "transistor_names": ["m11", "m10"]},
 ]
-print(compute_cluster_metrics(hl1prediction, ground_truth=data.hl1_gt))
-print(compute_cluster_metrics(hl2_prediction, ground_truth=data.hl2_gt))
-print(compute_cluster_metrics(hl3_prediction, ground_truth=data.hl3_gt))
+
+hl1_result = compute_cluster_metrics(hl1_prediction, ground_truth=data.hl1_gt)
+hl2_result = compute_cluster_metrics(hl2_prediction, ground_truth=data.hl2_gt)
+hl3_result = compute_cluster_metrics(hl3_prediction, ground_truth=data.hl3_gt)
+
+assert {
+    "Precision": 0.25,
+    "Recall": 0.3333333333333333,
+    "F1-score": 0.28571428571428575,
+} == hl1_result
+
+assert {"Precision": 0.0, "Recall": 0.0, "F1-score": 0} == hl2_result
+assert {"Precision": 1.0, "Recall": 0.14285714285714285, "F1-score": 0.25} == hl3_result
+print(hl1_result)
+print(hl2_result)
+print(hl3_result)
