@@ -129,6 +129,50 @@ def gen_instruction_prompt(
     return prompt
 
 
+def gen_instruction_hl3_prompt(
+    netlist: str = None,
+    hl3_gt: list[dict] = None,
+):
+    # correct format structure
+    hl3_gt = {sc["sub_circuit_name"]: sc["transistor_names"] for sc in hl3_gt}
+
+    subcircuit_name = "amplification stages (first, second, third stage), feedback stage, load and bias parts"
+    ground_truth = ""
+    if len(hl3_gt["firstStage"]) > 0:
+        ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['firstStage'])} transistor(s) belong to **the first amplification stage**: {hl3_gt['firstStage']}\n"
+    if len(hl3_gt["secondStage"]) > 0:
+        ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['secondStage'])} transistor(s) belong to **the second amplification stage**: {hl3_gt['secondStage']}\n"
+    if "thirdStage" in hl3_gt and len(hl3_gt["thirdStage"]) > 0:
+        ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['thirdStage'])} transistor(s) belong to **the third amplification stage**: {hl3_gt['thirdStage']}\n"
+    if "loadPart" in hl3_gt and len(hl3_gt["loadPart"]) > 0:
+        ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['loadPart'])} transistor(s) belong to **load parts**: {hl3_gt['loadPart']}\n"
+    if "biasPart" in hl3_gt and len(hl3_gt["biasPart"]) > 0:
+        ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['biasPart'])} transistor(s) belong to **bias parts**: {hl3_gt['biasPart']}\n"
+    if "feedBack" in hl3_gt and len(len(hl3_gt["feedBack"])) > 0:
+        ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['feedBack'])} transistor(s) belong to **feedback stages**: {hl3_gt['feedBack']}\n"
+
+    prompt = PromptTemplate.from_template(
+        f"""
+    You are an experienced analog designer. You are developing an instruction on how to identify **{subcircuit_name}** in flat SPICE netlists.  
+    The instruction should be in a step-by-step format and will be used by other LLMs to find **{subcircuit_name}** in new, unseen SPICE netlists.
+
+    A labeled example is provided, consisting of a flat SPICE netlist and the corresponding ground truth:
+
+    SPICE netlist:  
+    \n{netlist}         \n
+
+    Ground Truth:  
+    {ground_truth}
+
+    Your task is to:
+    - Analyze the example to extract reusable, step-by-step instructions that can be used to identify the same **{subcircuit_name}** in new, unseen SPICE netlists.
+    - Use a clear, step-by-step format in Markdown, and wrap the generated instruction between `<instruction>` and `</instruction>` tags. The instruction should be general and applicable to new, unseen SPICE netlists.
+    - Do not include any explanation, description, or comments related to the demonstration example.
+    """
+    )
+    return prompt
+
+
 def update_instruction_prompt(
     subcircuit_name: str = "Current Mirror",
     instruction_1: str = None,
