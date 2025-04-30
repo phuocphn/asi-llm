@@ -112,14 +112,9 @@ def get_hl3_cluster_labels(netlist_dir="data/asi-fuboco-test"):
     }
     hl3_clusters = defaultdict(set)
     for par in partitions:
-        name = par.tag
-        print(par.tag)
         if par.tag == "gmParts":
             for gm in par.iter("gmPart"):
-                # print(gm.attrib["type"])
                 partition_type = name_mappings.get(gm.attrib["type"], gm.attrib["type"])
-                print(partition_type)
-
                 for device in gm.iter("device"):
                     hl3_clusters[partition_type].add(
                         device.attrib["name"].replace("/", "")
@@ -156,12 +151,10 @@ def get_hl3_cluster_labels(netlist_dir="data/asi-fuboco-test"):
                         device.attrib["name"].replace("/", "")
                     )
 
-    # hl3_clusters = {k: list(v) for k, v in hl3_clusters.items()}
     hl3_clusters = [
         {"sub_circuit_name": k, "transistor_names": list(v)}
         for k, v in hl3_clusters.items()
     ]
-    # print(hl3_clusters)
     return hl3_clusters
 
 
