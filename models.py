@@ -23,6 +23,20 @@ def load_openai(model_name="gpt-4o"):
     )
 
 
+def load_xai(model_name="grok-3-beta"):
+    xai_api_key = os.getenv("XAI_API_KEY", None)
+    if xai_api_key is None:
+        raise ValueError("XAI_API_KEY environment variable is not set")
+
+    model = BaseChatOpenAI(
+        model=model_name,
+        openai_api_key=xai_api_key,
+        openai_api_base="https://api.x.ai/v1",
+        max_tokens=4096,
+    )
+    return model
+
+
 def load_deepseek(model_name="deepseek-reasoner"):
     deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", None)
     if deepseek_api_key is None:
@@ -35,3 +49,14 @@ def load_deepseek(model_name="deepseek-reasoner"):
         max_tokens=4096,
     )
     return model
+
+
+def load_llms(model_name: str):
+    if model_name.startswith("deepseek"):
+        return load_deepseek(model_name)
+    if model_name.startswith("gpt"):
+        return load_openai(model_name)
+    if model_name.startswith("llama"):
+        return load_ollama(model_name)
+    if model_name.startswith("grok"):
+        return load_xai(model_name)
