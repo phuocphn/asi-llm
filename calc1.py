@@ -22,22 +22,22 @@ logger.add(
 # logger.add(logfile, level=log_level, format=log_format, colorize=False, backtrace=True, diagnose=True)
 
 
-def assign_cluster_ids(subcircuits):
+def assign_cluster_ids(subcircuits: list[(str, list)]):
     """Assign unique cluster IDs to subcircuits and return a transistor-cluster mapping."""
     transistor_to_cluster = {}
     cluster_id = 0
-    for subcircuit in subcircuits:
-        for transistor in subcircuit["transistor_names"]:
+    for subcircuit_name, components in subcircuits:
+        for transistor in components:
             if transistor.lower() not in transistor_to_cluster:
                 transistor_to_cluster[transistor.lower()] = {
-                    "cluster_names": [subcircuit["sub_circuit_name"]],
+                    "cluster_names": [subcircuit_name],
                     "cluster_ids": [cluster_id],
                 }
             else:
                 new_cluster_names = list(
                     set(
                         transistor_to_cluster[transistor.lower()]["cluster_names"]
-                        + [subcircuit["sub_circuit_name"]]
+                        + [subcircuit_name]
                     )
                 )
                 new_cluster_ids = list(
@@ -68,21 +68,21 @@ def get_cluster_id_transistor_mapping(mapping):
     return cluster_map
 
 
-def filter_invalid_subcircuits(data):
-    """Filter out invalid subcircuits (do not match desired keys)."""
-    filtered_data = []
-    for entry in data:
-        if "sub_circuit_name" in entry and "transistor_names" in entry:
-            filtered_data.append(entry)
-    return filtered_data
+# def filter_invalid_subcircuits(data: list[(str, list)]):
+#     """Filter out invalid subcircuits (do not match desired keys)."""
+#     filtered_data = []
+#     for subcircuit_name, components in data:
+#         if "sub_circuit_name" in entry and "transistor_names" in entry:
+#             filtered_data.append(entry)
+#     return filtered_data
 
 
 def compute_cluster_metrics(predicted, ground_truth):
     """Compute correctness of transistor assignments with subcircuit type consideration."""
 
     # Filter out invalid subcircuits
-    predicted = filter_invalid_subcircuits(predicted)
-    ground_truth = filter_invalid_subcircuits(ground_truth)
+    # predicted = filter_invalid_subcircuits(predicted)
+    # ground_truth = filter_invalid_subcircuits(ground_truth)
 
     # assign cluster IDs to transistors in both predicted and ground truth data
     pred_mapping = assign_cluster_ids(predicted)
@@ -95,7 +95,7 @@ def compute_cluster_metrics(predicted, ground_truth):
     logger.debug(f"{gt_cluster_id_mapping=}")
     logger.debug(f"{pred_cluster_id_mapping=}")
 
-    is_hierarchical_level1 = ground_truth[0]["sub_circuit_name"] in [
+    is_hierarchical_level1 = ground_truth[0][0] in [
         "MosfetDiode",
         "load_cap",
         "compensation_cap",
@@ -177,24 +177,24 @@ def union(parent, rank, x, y):
             rank[root_x] += 1
 
 
-def merge_cm_transistors(ground_truth):
+def merge_cm_transistors(ground_truth: list[(str, list)]):
     parent = {}
     rank = {}
 
     # Initialize union-find structure
-    for entry in ground_truth:
-        if entry["sub_circuit_name"] == "CM":
-            for transistor in entry["transistor_names"]:
+    for subcircuit_name, components in ground_truth:
+        if subcircuit_name == "CM":
+            for transistor in components:
                 if transistor not in parent:
                     parent[transistor] = transistor
                     rank[transistor] = 0
 
     # Perform unions
-    for entry in ground_truth:
-        if entry["sub_circuit_name"] == "CM":
+    for subcircuit_name, components in ground_truth:
+        if subcircuit_name == "CM":
             # t1, t2 = entry['transistor_names']
             # union(parent, rank, t1, t2)
-            transistors = entry["transistor_names"]
+            transistors = components
             for i in range(1, len(transistors)):
                 union(parent, rank, transistors[0], transistors[i])
 
@@ -208,15 +208,15 @@ def merge_cm_transistors(ground_truth):
     return [sorted(list(group)) for group in merged_groups.values()]
 
 
-def merge_cm_transistor_cluster(ground_truth):
+def merge_cm_transistor_cluster(ground_truth: list[(str, list)]):
     new_gt = []
-    for cluster in ground_truth:
-        if cluster["sub_circuit_name"] != "CM":
-            new_gt.append(cluster)
+    for subcircuit_name, components in ground_truth:
+        if subcircuit_name != "CM":
+            new_gt.append((subcircuit_name, components))
 
     merged_cm_clusters = merge_cm_transistors(ground_truth)
     for cm in merged_cm_clusters:
-        new_gt.append({"sub_circuit_name": "CM", "transistor_names": cm})
+        new_gt.append(("CM", cm))
     return new_gt
 
 

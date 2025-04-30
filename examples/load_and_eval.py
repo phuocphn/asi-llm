@@ -8,34 +8,34 @@ data = SPICENetlist(f"data/asi-fuboco-test/small/1/")
 print("netlist:", data.netlist)
 
 # Hierarchical Level 1 Ground Truth:
-# Valid keys: "MosfetDiode", "load_cap", "compesation_cap"
-print("hl1_gt:", data.hl1_gt)
+# Valid subcircuit names: "MosfetDiode", "load_cap", "compesation_cap"
+print("Hierarchical Level 1 Ground Truth::", data.hl1_gt)
 
 # Hierarchical Level 2 Ground Truth:
-# Valid keys: "CM", "DiffPair", "Inverter"
-print("hl2_gt:", data.hl2_gt)
+# Valid subcircuit names:  "CM", "DiffPair", "Inverter"
+print("Hierarchical Level 2 Ground Truth::", data.hl2_gt)
 
 # Hierarchical Level 3 Ground Truth:
-# Valid keys: "firstStage", "secondStage", "thirdStage", "loadPart", "biasPart", "feedBack"
-print("hl3_gt:", data.hl3_gt)
+# Valid subcircuit names:  "firstStage", "secondStage", "thirdStage", "loadPart", "biasPart", "feedBack"
+print("Hierarchical Level 3 Ground Truth::", data.hl3_gt)
 
 
 hl1_prediction = [
-    {"sub_circuit_name": "MostfetDiode", "transistor_names": ["m11", "m12", "m8"]},
-    {"sub_circuit_name": "load_cap", "transistor_names": ["m21", "m22"]},
-    {"sub_circuit_name": "compensation_cap", "transistor_names": ["m29", "m30", "m31"]},
+    ("MostfetDiode", ["m11", "m12", "m8"]),
+    ("load_cap", ["m21", "m22"]),
+    ("compensation_cap", ["m29", "m30", "m31"]),
 ]
 
 hl2_prediction = [
-    {"sub_circuit_name": "DiffPair", "transistor_names": ["m11", "m12"]},
-    {"sub_circuit_name": "DiffPair", "transistor_names": ["m6", "m8"]},
-    {"sub_circuit_name": "CM", "transistor_names": ["m2", "m3", "m4", "m5"]},
-    {"sub_circuit_name": "CM", "transistor_names": ["m10", "m11", "m12"]},
-    {"sub_circuit_name": "CM", "transistor_names": ["m21", "m22"]},
-    {"sub_circuit_name": "CM", "transistor_names": ["m29", "m30", "m31"]},
+    ("DiffPair", ["m11", "m12"]),
+    ("DiffPair", ["m6", "m8"]),
+    ("CM", ["m2", "m3", "m4", "m5"]),
+    ("CM", ["m10", "m11", "m12"]),
+    ("CM", ["m21", "m22"]),
+    ("CM", ["m29", "m30", "m31"]),
 ]
 hl3_prediction = [
-    {"sub_circuit_name": "firstStage", "transistor_names": ["m11", "m10"]},
+    ("firstStage", ["m11", "m10"]),
 ]
 
 hl1_result = compute_cluster_metrics(hl1_prediction, ground_truth=data.hl1_gt)

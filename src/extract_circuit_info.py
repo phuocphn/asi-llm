@@ -63,9 +63,8 @@ def get_hl1_cluster_labels(netlist_dir="data/netlist1/"):
             devices[cap.attrib["type"] + "_cap"].add(
                 device.attrib["name"].replace("/", "")
             )
-    return [
-        {"sub_circuit_name": k, "transistor_names": list(v)} for k, v in devices.items()
-    ]
+    devices = [(k, list(v)) for k, v in devices.items()]
+    return devices
 
 
 def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
@@ -73,7 +72,7 @@ def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
     root = tree.getroot()
     subcircuits = root[1]
 
-    HL2_subcircuits = []
+    structures = []
     for sc in subcircuits:
         name = rename(sc.attrib["name"])
         if name == "DiffPair":
@@ -93,10 +92,10 @@ def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
             if len(device_names) == 1:
                 print("Warning: Only one device in subcircuit:", name)
                 print(sc.attrib["name"])
-            HL2_subcircuits.append(
-                {"sub_circuit_name": name, "transistor_names": device_names}
-            )
-    return HL2_subcircuits
+            structures.append((name, device_names))
+
+    structures = [(k, v) for k, v in structures]
+    return structures
 
 
 def get_hl3_cluster_labels(netlist_dir="data/asi-fuboco-test"):
@@ -151,10 +150,11 @@ def get_hl3_cluster_labels(netlist_dir="data/asi-fuboco-test"):
                         device.attrib["name"].replace("/", "")
                     )
 
-    hl3_clusters = [
-        {"sub_circuit_name": k, "transistor_names": list(v)}
-        for k, v in hl3_clusters.items()
-    ]
+    # hl3_clusters = [
+    #     {"sub_circuit_name": k, "transistor_names": list(v)}
+    #     for k, v in hl3_clusters.items()
+    # ]
+    hl3_clusters = [(k, list(v)) for k, v in hl3_clusters.items()]
     return hl3_clusters
 
 
