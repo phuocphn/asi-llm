@@ -19,7 +19,7 @@ class SPICENetlist:
     @property
     def get_graph_labels(self) -> Dict[str, Tuple[List, List, List]]:
         labels = defaultdict(list)
-        subcircuit_name_to_label_id_mappings = {
+        subcircuit_name_to_label_ids_mapping = {
             "MosfetDiode": 1,
             "load_cap": 2,
             "compensation_cap": 3,
@@ -42,7 +42,7 @@ class SPICENetlist:
             for subcircuit_name, subcircuit_components in self.hl1_gt:
                 if component_name in subcircuit_components:
                     hl1_labels += [
-                        subcircuit_name_to_label_id_mappings[subcircuit_name]
+                        subcircuit_name_to_label_ids_mapping[subcircuit_name]
                     ]
             labels[component_name].append(hl1_labels)
 
@@ -51,7 +51,7 @@ class SPICENetlist:
             for subcircuit_name, subcircuit_components in self.hl2_gt:
                 if component_name in subcircuit_components:
                     hl2_labels += [
-                        subcircuit_name_to_label_id_mappings[subcircuit_name]
+                        subcircuit_name_to_label_ids_mapping[subcircuit_name]
                     ]
             labels[component_name].append(hl2_labels)
 
@@ -60,7 +60,7 @@ class SPICENetlist:
             for subcircuit_name, subcircuit_components in self.hl3_gt:
                 if component_name in subcircuit_components:
                     hl3_labels += [
-                        subcircuit_name_to_label_id_mappings[subcircuit_name]
+                        subcircuit_name_to_label_ids_mapping[subcircuit_name]
                     ]
             labels[component_name].append(hl3_labels)
 
