@@ -3,43 +3,33 @@ import glob
 import os
 from collections import defaultdict
 
-rename_map = {
+hl2_subcircuit_name_mapping = {
+    "MosfetSimpleCurrentMirror": "CM",
+    "MosfetCascodeCurrentMirror": "CM",
+    "MosfetWideSwingCascodeCurrentMirror": "CM",
+    "MosfetFourTransistorCurrentMirror": "CM",
+    "MosfetWilsonCurrentMirror": "CM",
+    "MosfetImprovedWilsonCurrentMirror": "CM",
+    "MosfetDifferentialPair": "DiffPair",
+    "MosfetCascodedDifferentialPair": "DiffPair",
+    "MosfetFoldedCascodeDifferentialPair": "DiffPair",
+    "MosfetAnalogInverter": "Inverter",
+    "MosfetCascodedAnalogInverter": "Inverter",
     "MosfetCascodedPMOSAnalogInverter": "Inverter",
     "MosfetCascodedNMOSAnalogInverter": "Inverter",
-    "MosfetCascodedAnalogInverter": "Inverter",
-    "MosfetCascodeAnalogInverterPmosDiodeTransistor": "Inverter",
-    "MosfetCascodeAnalogInverterNmosDiodeTransistor": "Inverter",
-    "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor": "Inverter",
     "MosfetCascodePMOSAnalogInverterOneDiodeTransistor": "Inverter",
-    "MosfetCascodePMOSAnalogInverterCurrentMirrorLoad": "Inverter",
-    "MosfetCascodeNMOSAnalogInverterCurrentMirrorLoad": "Inverter",
-    "MosfetCascodeAnalogInverterTwoCurrentMirrorLoads": "Inverter",
-    "MosfetAnalogInverter": "Inverter",
-    "MosfetDifferentialPair": "DiffPair",
-    "MosfetFoldedCascodeDifferentialPair": "DiffPair",
-    "MosfetCascodedDifferentialPair": "DiffPair",
-    "MosfetSimpleCurrentMirror": "CM",
-    "MosfetImprovedWilsonCurrentMirror": "CM",
-    "MosfetCascodeAnalogInverterPmosCurrentMirrorLoad": "Inverter",
+    "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor": "Inverter",
+    "MosfetCascodeAnalogInverterNmosDiodeTransistor": "Inverter",
+    "MosfetCascodeAnalogInverterPmosDiodeTransistor": "Inverter",
     "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad": "Inverter",
-    "MosfetFourTransistorCurrentMirror": "CM",
-    "MosfetCascodeCurrentMirror": "CM",
-    "MosfetWilsonCurrentMirror": "CM",
-    "MosfetWideSwingCascodeCurrentMirror": "CM",
-    "InverterPmosCurrentMirrorLoad": "CM",
-    "CapacitorArray": "cap",
-    "MosfetDiodeArray": "MosfetDiode",
-    "MosfetNormalArray": "Mosfet",
 }
 
 
 def rename(circuit_name):
+    """only use for HL2 subcircuit names"""
     # remove indexing-brackets: MosfetNormalArray[19] -> MosfetNormalArray
     circuit_name = circuit_name[: circuit_name.find("[")]
-
-    for old_name, new_name in rename_map.items():
-        circuit_name = circuit_name.replace(old_name, new_name)
-    return circuit_name
+    return hl2_subcircuit_name_mapping[circuit_name]
 
 
 def get_hl1_cluster_labels(netlist_dir="data/netlist1/"):
@@ -74,6 +64,15 @@ def get_hl2_cluster_labels(netlist_dir="data/netlist1/"):
 
     structures = []
     for sc in subcircuits:
+        # ignore this label
+        if (
+            sc.attrib["name"].startswith("MosfetNmosDiodeAnalogInverter")
+            or sc.attrib["name"].startswith("MosfetPmosDiodeAnalogInverter")
+            or sc.attrib["name"].startswith("CapacitorArray")
+            or sc.attrib["name"].startswith("MosfetNormalArray")
+            or sc.attrib["name"].startswith("MosfetDiodeArray")
+        ):
+            continue
         name = rename(sc.attrib["name"])
         if name == "DiffPair":
             should_skip = False
