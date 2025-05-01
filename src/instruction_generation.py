@@ -198,9 +198,9 @@ def gen_rules(model_name, subcircuit):
             # prompt_fn = gen_instruction_hl1_prompt  # or gen_instruction_prompt
         elif level == 2:
             ground_truth = [
-                sc["transistor_names"]
-                for sc in data.hl2_gt
-                if sc["sub_circuit_name"] == subcircuit_abbrev_map[subcircuit]
+                components
+                for sc_name, components in data.hl2_gt
+                if sc_name == subcircuit_abbrev_map[subcircuit]
             ]
             prompt = gen_instruction_prompt(
                 subcircuit_name=subcircuit,
@@ -216,7 +216,7 @@ def gen_rules(model_name, subcircuit):
         logger.info(prompt.invoke({}).to_string())
 
         output, parsed_data = model_call(model, prompt, data)
-        logger.info(f"output:" + output.content)
+        # logger.info(f"output:" + output.content)
         logger.info(f"Parsed data: {parsed_data}")
 
         with open(os.path.join(working_dir, f"instruction-{index}.md"), "w") as f:

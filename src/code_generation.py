@@ -54,9 +54,9 @@ def hl2_code_generator(instruction_path, subcircuit_name, test_index, call_model
         ground_truth = str(
             json.dumps(
                 [
-                    sc
-                    for sc in data.hl2_gt
-                    if sc["sub_circuit_name"] == subcircuit_abbrev_map[subcircuit_name]
+                    (sc_name, components)
+                    for sc_name, components in data.hl2_gt
+                    if sc_name == subcircuit_abbrev_map[subcircuit_name]
                 ]
             )
             .replace('"', "'")

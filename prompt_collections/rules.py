@@ -134,7 +134,7 @@ def gen_instruction_hl3_prompt(
     hl3_gt: list[dict] = None,
 ):
     # correct format structure
-    hl3_gt = {sc["sub_circuit_name"]: sc["transistor_names"] for sc in hl3_gt}
+    hl3_gt = {sc[0]: sc[1] for sc in hl3_gt}
 
     subcircuit_name = "amplification stages (first, second, third stage), feedback stage, load and bias parts"
     ground_truth = ""
@@ -324,14 +324,14 @@ def gen_python_script_v3(
 
 
 def gen_python_script_v4(
-    subcircuit_name: str = "Current Mirror",
+    subcircuit_name: str = "Current Mirrors",
     instruction: str = None,
     testcase: str = None,
 ):
     prompt = PromptTemplate.from_template(
         f"""
-    You are an experienced Python programmer working on identifying **{subcircuit_name}s** in a SPICE netlist.  
-    You are given the following step-by-step instructions on how to identify **{subcircuit_name}s** in a SPICE netlist.
+    You are an experienced Python programmer working on identifying **{subcircuit_name}** in a SPICE netlist.  
+    You are given the following step-by-step instructions on how to identify **{subcircuit_name}** in a SPICE netlist.
 
     **Instructions**  
     ```
@@ -372,52 +372,44 @@ def gen_instruction_hl1_prompt(
     netlist: str = None,
     hl1_gt: list[dict] = None,
 ):
-    num_diode_connected_trans = len(
-        [d for d in hl1_gt if d["sub_circuit_name"] == "MosfetDiode"]
-    )
+    num_diode_connected_trans = 0
+    num_load_caps = 0
+    num_compensation_caps = 0
+    for group in hl1_gt:
+        if group[0] == "MosfetDiode":
+            num_diode_connected_trans = len(group[1])
+        if group[0] == "load_cap":
+            num_load_caps = len(group[1])
+        if group[0] == "compensation_cap":
+            num_compensation_caps = len(group[1])
+
     if num_diode_connected_trans > 1:
         postfix_diode_connected_tran = "s"
     else:
         postfix_diode_connected_tran = ""
-    print(hl1_gt)
+
     ground_truth_diode_connected_trans_str = ", ".join(
-        [
-            str(d["transistor_names"])
-            for d in hl1_gt
-            if d["sub_circuit_name"] == "MosfetDiode"
-        ]
+        [str(d[1]) for d in hl1_gt if d[0] == "MosfetDiode"]
     )
     # ---
 
-    num_load_caps = len([d for d in hl1_gt if d["sub_circuit_name"] == "load_cap"])
     if num_load_caps > 1:
         postfix_load_caps = "s"
     else:
         postfix_load_caps = ""
 
     ground_truth_load_caps = ", ".join(
-        [
-            str(d["transistor_names"])
-            for d in hl1_gt
-            if d["sub_circuit_name"] == "load_cap"
-        ]
+        [str(d[1]) for d in hl1_gt if d[0] == "load_cap"]
     )
 
     # ---
-    num_compensation_caps = len(
-        [d for d in hl1_gt if d["sub_circuit_name"] == "compensation_cap"]
-    )
     if num_compensation_caps > 1:
         postfix_compensation_caps = "s"
     else:
         postfix_compensation_caps = ""
 
     ground_truth_compensation_caps_str = ", ".join(
-        [
-            str(d["transistor_names"])
-            for d in hl1_gt
-            if d["sub_circuit_name"] == "compensation_cap"
-        ]
+        [str(d[1]) for d in hl1_gt if d[0] == "compensation_cap"]
     )
 
     prompt = PromptTemplate.from_template(
