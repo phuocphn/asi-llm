@@ -449,7 +449,9 @@ def update_python_script(
     ```
 
     
-    Your task is to fix any bugs, wrong logics in the previous generated Python code, so that the returned output matches the expected output.
+    Your task is to revise the previously generated Python code and fix any bugs or incorrect logic so that the returned output matches the expected output.  
+    In addition, add relevant assertions with detailed debugging information to assist future revisions and avoid repeating the same error.
+
     Let's think step by step.
     """
     )
