@@ -135,6 +135,50 @@ def gen_hl1_prompt(instruction_path, test_index, call_model):
         print(output)
 
 
+def gen_hl3_prompt(instruction_path, test_index, call_model):
+    print(f"instruction path: {instruction_path}")
+
+    with open(instruction_path, "r") as f:
+        generated_instruction = f.read()
+
+    testcase_str = ""
+    for i, testcase_netlist in enumerate(demonstration_netlists[test_index]):
+        data = SPICENetlist(testcase_netlist)
+
+        ground_truth = str(
+            json.dumps([sc for sc in data.hl3_gt])
+            .replace('"', "'")
+            .replace("{", "{{")
+            .replace("}", "}}")
+        )
+        test = f"""
+        **Test Case {i+1}**  
+        **Input SPICE Netlist**  
+        ```
+        {data.netlist}
+        ```
+
+        **Expected Output**  (order of list elements does not matter)  
+        ```
+        {ground_truth}
+        ```
+        ----\n
+        """
+        testcase_str += test
+
+    prompt = gen_python_script_v4(
+        instruction=generated_instruction,
+        subcircuit_name="amplification stages, feedback stages, load and bias parts",
+        testcase=testcase_str,
+    )
+
+    print(prompt.invoke({}).to_string())
+    if call_model:
+        model = load_openai(model_name="gpt-4.1")
+        output = (prompt | model).invoke({}).content
+        print(output)
+
+
 @click.command()
 @click.option(
     "--level",
@@ -168,6 +212,8 @@ def code_generator(level, instruction_path, subcircuit_name, test_index, call_mo
         gen_hl1_prompt(instruction_path, test_index, call_model)
     if level == 2:
         hl2_code_generator(instruction_path, subcircuit_name, test_index, call_model)
+    if level == 3:
+        gen_hl3_prompt(instruction_path, test_index, call_model)
 
 
 if __name__ == "__main__":
