@@ -43,9 +43,7 @@ def get_demonstration_examples(samples=[56, 49, 51]):
                 subcircuit_names.add(subcircuit_name)
             all_examples.append(netlist_dir)
 
-    assert (
-        len(subcircuit_names) == 21 + 2
-    ), f"number of subcircuit: {len(subcircuit_names)}"
+    assert len(subcircuit_names) == 21, f"number of subcircuit: {len(subcircuit_names)}"
     return all_examples
 
 
@@ -158,7 +156,7 @@ def llm_invoke(model, prompt, data: SPICENetlist) -> list[str, str]:
 #     ),
 # )
 def gen_rules(model_name, subcircuit):
-    demonstration_examples = get_demonstration_examples([79, 51, 5])
+    demonstration_examples = get_demonstration_examples([77, 55, 30])
 
     logger.info(f"len of demonstration examples: {demonstration_examples}")
     subcircuit_abbrev_map = {
