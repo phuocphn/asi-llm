@@ -103,7 +103,7 @@ def make_benchmark():
         # 'max_fully_differential_three_stage_opamps':  [50, f"{netlist_dir}/FullyDifferentialOpAmps/three_stage_*.ckt"],
         "max_single_output_three_stage_opamps": [
             50,
-            f"/mnt/home/pham/code/outputs_0/outputs/TopologyGen-27.04.25/SingleOutputOpAmps/three_stage*.ckt",
+            f"/mnt/home/pham/code/maga/outputs/TopologyGen/SingleOutputOpAmps/three_stage*.ckt",
         ],
     }
 
