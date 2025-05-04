@@ -60,3 +60,4 @@ def load_llms(model_name: str):
         return load_ollama(model_name)
     if model_name.startswith("grok"):
         return load_xai(model_name)
+    raise NotImplementedError("not found model name")
