@@ -140,7 +140,7 @@ def gen_instruction_hl3_prompt(
     ground_truth = ""
     if len(hl3_gt["firstStage"]) > 0:
         ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['firstStage'])} transistor(s) belong to **the first amplification stage**: {hl3_gt['firstStage']}\n"
-    if len(hl3_gt["secondStage"]) > 0:
+    if "secondStage" in hl3_gt and len(hl3_gt["secondStage"]) > 0:
         ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['secondStage'])} transistor(s) belong to **the second amplification stage**: {hl3_gt['secondStage']}\n"
     if "thirdStage" in hl3_gt and len(hl3_gt["thirdStage"]) > 0:
         ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['thirdStage'])} transistor(s) belong to **the third amplification stage**: {hl3_gt['thirdStage']}\n"
