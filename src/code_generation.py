@@ -12,27 +12,27 @@ import click
 
 
 demonstration_netlists = {
-    1: ["data/asi-fuboco-train/medium/79/"],
+    1: ["data/asi-fuboco-train/medium/55/"],
     2: [
-        "data/asi-fuboco-train/small/79/",
-        "data/asi-fuboco-train/medium/79/",
+        "data/asi-fuboco-train/small/55/",
+        "data/asi-fuboco-train/medium/55/",
     ],
     4: [
-        "data/asi-fuboco-train/small/51/",
-        "data/asi-fuboco-train/small/79/",
-        "data/asi-fuboco-train/medium/51/",
-        "data/asi-fuboco-train/medium/79/",
+        "data/asi-fuboco-train/small/77/",
+        "data/asi-fuboco-train/small/55/",
+        "data/asi-fuboco-train/medium/77/",
+        "data/asi-fuboco-train/medium/55/",
     ],
     6: [
-        "data/asi-fuboco-train/small/5/",
-        "data/asi-fuboco-train/small/51/",
-        "data/asi-fuboco-train/small/79/",
-        "data/asi-fuboco-train/medium/5/",
-        "data/asi-fuboco-train/medium/51/",
-        "data/asi-fuboco-train/medium/79/",
+        "data/asi-fuboco-train/small/77/",
+        "data/asi-fuboco-train/small/55/",
+        "data/asi-fuboco-train/small/30/",
+        "data/asi-fuboco-train/medium/77/",
+        "data/asi-fuboco-train/medium/55/",
+        "data/asi-fuboco-train/medium/30/",
     ],
-    7: ["data/asi-fuboco-train/small/5/"],
-    8: ["data/asi-fuboco-train/medium/5/"],
+    7: ["data/asi-fuboco-train/small/77/"],
+    8: ["data/asi-fuboco-train/medium/55/"],
 }
 
 
