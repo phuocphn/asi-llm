@@ -3,26 +3,37 @@ import glob
 import os
 from collections import defaultdict
 
-hl2_subcircuit_name_mapping = {
-    "MosfetSimpleCurrentMirror": "CM",
-    "MosfetCascodeCurrentMirror": "CM",
-    "MosfetWideSwingCascodeCurrentMirror": "CM",
-    "MosfetFourTransistorCurrentMirror": "CM",
-    "MosfetWilsonCurrentMirror": "CM",
-    "MosfetImprovedWilsonCurrentMirror": "CM",
-    "MosfetDifferentialPair": "DiffPair",
-    "MosfetCascodedDifferentialPair": "DiffPair",
-    "MosfetFoldedCascodeDifferentialPair": "DiffPair",
-    "MosfetAnalogInverter": "Inverter",
-    "MosfetCascodedAnalogInverter": "Inverter",
-    "MosfetCascodedPMOSAnalogInverter": "Inverter",
-    "MosfetCascodedNMOSAnalogInverter": "Inverter",
-    "MosfetCascodePMOSAnalogInverterOneDiodeTransistor": "Inverter",
-    "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor": "Inverter",
-    "MosfetCascodeAnalogInverterNmosDiodeTransistor": "Inverter",
-    "MosfetCascodeAnalogInverterPmosDiodeTransistor": "Inverter",
-    "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad": "Inverter",
-}
+inv = [
+    "MosfetCascodedPMOSAnalogInverter",
+    "MosfetAnalogInverter",
+    "MosfetCascodedAnalogInverter",
+    "MosfetCascodeAnalogInverterNmosDiodeTransistor",
+    "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
+    "MosfetCascodedNMOSAnalogInverter",
+    "MosfetCascodePMOSAnalogInverterOneDiodeTransistor",
+    "MosfetCascodeAnalogInverterPmosDiodeTransistor",
+    "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
+]
+dp = [
+    "MosfetDifferentialPair",
+    "MosfetCascodedDifferentialPair",
+    "MosfetFoldedCascodeDifferentialPair",
+]
+cm = [
+    "MosfetFourTransistorCurrentMirror",
+    "MosfetWideSwingCascodeCurrentMirror",
+    "MosfetSimpleCurrentMirror",
+    "MosfetImprovedWilsonCurrentMirror",
+    "MosfetWilsonCurrentMirror",
+    "MosfetCascodeCurrentMirror",
+]
+hl2_subcircuit_name_mapping = {}
+for v in cm:
+    hl2_subcircuit_name_mapping[v] = "CM"
+for v in dp:
+    hl2_subcircuit_name_mapping[v] = "DiffPair"
+for v in inv:
+    hl2_subcircuit_name_mapping[v] = "Inverter"
 
 
 def rename(circuit_name):

@@ -17,29 +17,27 @@ def get_demonstration_examples(samples):
     all_examples = []
     available_subcircuit_names = list(
         {
-            "MosfetCascodedDifferentialPair",
-            "MosfetImprovedWilsonCurrentMirror",
+            "MosfetCascodedPMOSAnalogInverter",
+            "MosfetAnalogInverter",
+            "MosfetDifferentialPair",
             "MosfetSimpleCurrentMirror",
             "CapacitorArray",
             "MosfetDiodeArray",
-            "MosfetCascodeAnalogInverterNmosDiodeTransistor",
-            "MosfetCascodeCurrentMirror",
-            "MosfetFoldedCascodeDifferentialPair",
-            "MosfetAnalogInverter",
-            "MosfetDifferentialPair",
-            "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
-            "MosfetFourTransistorCurrentMirror",
-            "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
-            "MosfetWilsonCurrentMirror",
-            "MosfetCascodedAnalogInverter",
+            "MosfetWideSwingCascodeCurrentMirror",
             "MosfetNormalArray",
-            "MosfetCascodedPMOSAnalogInverter",
+            "MosfetCascodeCurrentMirror",
+            "MosfetCascodedAnalogInverter",
+            "MosfetCascodeAnalogInverterNmosDiodeTransistor",
+            "MosfetWilsonCurrentMirror",
+            "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
+            "MosfetImprovedWilsonCurrentMirror",
+            "MosfetCascodedDifferentialPair",
+            "MosfetCascodedNMOSAnalogInverter",
             "MosfetCascodePMOSAnalogInverterOneDiodeTransistor",
             "MosfetCascodeAnalogInverterPmosDiodeTransistor",
-            "MosfetCascodedNMOSAnalogInverter",
-            "MosfetWideSwingCascodeCurrentMirror",
-            "MosfetNmosDiodeAnalogInverter",
-            "MosfetPmosDiodeAnalogInverter",
+            "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
+            "MosfetFourTransistorCurrentMirror",
+            "MosfetFoldedCascodeDifferentialPair",
         }
     )
     counter = {k: 0 for k in available_subcircuit_names}
@@ -69,38 +67,37 @@ def get_demonstration_examples_v2(samples):
     all_examples = []
     available_subcircuit_names = list(
         {
-            "MosfetCascodedDifferentialPair",
-            "MosfetImprovedWilsonCurrentMirror",
+            "MosfetCascodedPMOSAnalogInverter",
+            "MosfetAnalogInverter",
+            "MosfetDifferentialPair",
             "MosfetSimpleCurrentMirror",
             "CapacitorArray",
             "MosfetDiodeArray",
-            "MosfetCascodeAnalogInverterNmosDiodeTransistor",
-            "MosfetCascodeCurrentMirror",
-            "MosfetFoldedCascodeDifferentialPair",
-            "MosfetAnalogInverter",
-            "MosfetDifferentialPair",
-            "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
-            "MosfetFourTransistorCurrentMirror",
-            "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
-            "MosfetWilsonCurrentMirror",
-            "MosfetCascodedAnalogInverter",
+            "MosfetWideSwingCascodeCurrentMirror",
             "MosfetNormalArray",
-            "MosfetCascodedPMOSAnalogInverter",
+            "MosfetCascodeCurrentMirror",
+            "MosfetCascodedAnalogInverter",
+            "MosfetCascodeAnalogInverterNmosDiodeTransistor",
+            "MosfetWilsonCurrentMirror",
+            "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
+            "MosfetImprovedWilsonCurrentMirror",
+            "MosfetCascodedDifferentialPair",
+            "MosfetCascodedNMOSAnalogInverter",
             "MosfetCascodePMOSAnalogInverterOneDiodeTransistor",
             "MosfetCascodeAnalogInverterPmosDiodeTransistor",
-            "MosfetCascodedNMOSAnalogInverter",
-            "MosfetWideSwingCascodeCurrentMirror",
-            "MosfetNmosDiodeAnalogInverter",
-            "MosfetPmosDiodeAnalogInverter",
+            "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
+            "MosfetFourTransistorCurrentMirror",
+            "MosfetFoldedCascodeDifferentialPair",
         }
     )
     counter = {k: 0 for k in available_subcircuit_names}
 
     for index, i in enumerate(samples):  # range(1, 101):
-        if index < 3:
-            dir = "small"
-        else:
-            dir = "medium"
+        # if index < 3:
+        #     dir = "small"
+        # else:
+        #     dir = "medium"
+        dir = "small"
         netlist_dir = f"data/asi-fuboco-train/{dir}/{i}/"
         tree = ET.parse(glob.glob(os.path.join(netlist_dir, "structure_result.xml"))[0])
         root = tree.getroot()
@@ -121,29 +118,27 @@ def get_demonstration_examples_v2(samples):
 def check_cover(examples):
     available_subcircuit_names = list(
         {
-            "MosfetCascodedDifferentialPair",
-            "MosfetImprovedWilsonCurrentMirror",
+            "MosfetCascodedPMOSAnalogInverter",
+            "MosfetAnalogInverter",
+            "MosfetDifferentialPair",
             "MosfetSimpleCurrentMirror",
             "CapacitorArray",
             "MosfetDiodeArray",
-            "MosfetCascodeAnalogInverterNmosDiodeTransistor",
-            "MosfetCascodeCurrentMirror",
-            "MosfetFoldedCascodeDifferentialPair",
-            "MosfetAnalogInverter",
-            "MosfetDifferentialPair",
-            "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
-            "MosfetFourTransistorCurrentMirror",
-            "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
-            "MosfetWilsonCurrentMirror",
-            "MosfetCascodedAnalogInverter",
+            "MosfetWideSwingCascodeCurrentMirror",
             "MosfetNormalArray",
-            "MosfetCascodedPMOSAnalogInverter",
+            "MosfetCascodeCurrentMirror",
+            "MosfetCascodedAnalogInverter",
+            "MosfetCascodeAnalogInverterNmosDiodeTransistor",
+            "MosfetWilsonCurrentMirror",
+            "MosfetCascodeNMOSAnalogInverterOneDiodeTransistor",
+            "MosfetImprovedWilsonCurrentMirror",
+            "MosfetCascodedDifferentialPair",
+            "MosfetCascodedNMOSAnalogInverter",
             "MosfetCascodePMOSAnalogInverterOneDiodeTransistor",
             "MosfetCascodeAnalogInverterPmosDiodeTransistor",
-            "MosfetCascodedNMOSAnalogInverter",
-            "MosfetWideSwingCascodeCurrentMirror",
-            "MosfetNmosDiodeAnalogInverter",
-            "MosfetPmosDiodeAnalogInverter",
+            "MosfetCascodeAnalogInverterNmosCurrentMirrorLoad",
+            "MosfetFourTransistorCurrentMirror",
+            "MosfetFoldedCascodeDifferentialPair",
         }
     )
     counter = {k: 0 for k in available_subcircuit_names}
@@ -169,8 +164,9 @@ if __name__ == "__main__":
 
     for _ in range(20000):
         # samples = [56, 49, 51]  # random.sample(range(1, 101), 3)
-        samples = random.sample(range(1, 101), 5)
-        demonstration_examples = get_demonstration_examples_v2(samples)
+        samples = random.sample(range(1, 101), 6)
+        samples = [77, 55, 30]
+        demonstration_examples = get_demonstration_examples(samples)
         cover = check_cover(demonstration_examples)
 
         if cover:
