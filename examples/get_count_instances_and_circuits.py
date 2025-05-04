@@ -49,11 +49,10 @@ def get_labels_statistic(data_path="data/asi-fuboco-test"):
             )
             root = tree.getroot()
             subcircuits = root[1]
-            for device in data.hl1_gt:
+            for dtype, components in data.hl1_gt:
                 # pass
-                dtype = device["sub_circuit_name"]
                 circuit_counts[dtype].add(netlist_dir)
-                instance_counts[dtype] += len(device["transistor_names"])
+                instance_counts[dtype] += len(components)
 
             for sc in subcircuits:
                 circuit_name = sc.attrib["name"]
@@ -67,8 +66,8 @@ def get_labels_statistic(data_path="data/asi-fuboco-test"):
                 circuit_counts[circuit_name].add(netlist_dir)
                 instance_counts[circuit_name] += 1
 
-            for par in data.hl3_gt:
-                par_type = par["sub_circuit_name"]
+            for par_type, components in data.hl3_gt:
+                par_type = par_type
                 circuit_counts[par_type].add(netlist_dir)
                 instance_counts[par_type] += 1
 
