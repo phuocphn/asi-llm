@@ -13,3 +13,7 @@
     'data/asi-fuboco-train/medium/51/', 
     'data/asi-fuboco-train/medium/5/']
     ```
+
+
+[77, 55, 30]
+['data/asi-fuboco-train/small/77/', 'data/asi-fuboco-train/small/55/', 'data/asi-fuboco-train/small/30/', 'data/asi-fuboco-train/medium/77/', 'data/asi-fuboco-train/medium/55/', 'data/asi-fuboco-train/medium/30/']
