@@ -2,6 +2,7 @@ import os
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import BaseChatOpenAI
+from google import genai
 
 
 def load_ollama(model_name="deepseek-r1:70b"):
@@ -51,6 +52,19 @@ def load_deepseek(model_name="deepseek-reasoner"):
     return model
 
 
+class google_genai_model:
+    def __init__(self, model_name="gemini-2.5-pro-exp-03-25"):
+        google_api_key = os.getenv("GOOGLE_AI_KEY", None)
+        self.model_name = model_name
+        self.client = genai.Client(api_key=google_api_key)
+
+    def invoke(self, prompt: str) -> str:
+        response = self.client.models.generate_content(
+            model=self.model_name, contents=prompt
+        )
+        return response.text
+
+
 def load_llms(model_name: str):
     if model_name.startswith("deepseek"):
         return load_deepseek(model_name)
@@ -60,4 +74,6 @@ def load_llms(model_name: str):
         return load_ollama(model_name)
     if model_name.startswith("grok"):
         return load_xai(model_name)
+    if model_name.startswith("ai_studio_gemini"):
+        return google_genai_model()
     raise NotImplementedError("not found model name")
