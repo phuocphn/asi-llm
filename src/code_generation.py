@@ -3,13 +3,21 @@ from prompt_collections.rules import (
     gen_python_script_v2,
     gen_python_script_v3,
     gen_python_script_v4,
+    gen_python_script_chat_template_v4,
+    update_python_script,
 )
 from src.netlist import SPICENetlist
-import json
+from pathlib import Path
 
-from models import load_openai
+import json
 import click
 
+
+from models import load_llms
+from loguru import logger
+from utils import ppformat, configure_logging
+from langchain_core.messages import HumanMessage, AIMessage
+import os
 
 demonstration_netlists = {
     1: ["data/asi-fuboco-train/medium/55/"],
@@ -36,9 +44,11 @@ demonstration_netlists = {
 }
 
 
-def hl2_code_generator(instruction_path, subcircuit_name, test_index, call_model):
-    print(f"subcircuit name: {subcircuit_name}")
-    print(f"instruction path: {instruction_path}")
+def hl2_code_generator(
+    instruction_path, subcircuit_name, test_index, call_model, model, config
+):
+    logger.info(f"subcircuit name: {subcircuit_name}")
+    logger.info(f"instruction path: {instruction_path}")
 
     with open(instruction_path, "r") as f:
         generated_instruction = f.read()
@@ -80,20 +90,63 @@ def hl2_code_generator(instruction_path, subcircuit_name, test_index, call_model
         """
         testcase_str += test
 
-    prompt = gen_python_script_v4(
+    prompt = gen_python_script_chat_template_v4(
         instruction=generated_instruction,
         subcircuit_name=subcircuit_name + "s",
         testcase=testcase_str,
     )
 
-    print(prompt.invoke({}).to_string())
+    # logger.info(prompt.invoke({}).to_string())
+
     if call_model:
-        model = load_openai(model_name="gpt-4.1")
-        output = (prompt | model).invoke({}).content
-        print(output)
+        chat_history = []
+        chain = prompt | model
+
+        message = f"""
+        **Instructions**  
+        ```
+        {generated_instruction}
+        ```
+
+        {testcase_str}
+        """
+
+        for i in range(config["max_retries"]):
+            response = chain.invoke({"chat_history": chat_history})
+            chat_history.append(HumanMessage(content=message))
+            chat_history.append(AIMessage(content=response.content))
+            response_path = os.path.join(
+                config["working_dir"],
+                f"response{i}.log",
+            )
+
+            with open(response_path, "w") as f:
+                f.write(response.content)
+
+            while True:
+                user_feedback = input(f"runtime errors occured [{i}]: ")
+                if user_feedback.startswith("yes") or user_feedback.startswith("no"):
+                    break
+
+            if user_feedback.startswith("yes"):
+                error_path = os.path.join(
+                    config["working_dir"],
+                    f"error{i}.log",
+                )
+                if os.path.exists(error_path):
+                    with open(error_path, "r") as f:
+                        error_msg = f.read()
+                    message = (
+                        update_python_script(error_message=error_msg)
+                        .invoke({})
+                        .to_string()
+                    )
+                    logger.info(message)
+            else:
+                break
 
 
-def gen_hl1_prompt(instruction_path, test_index, call_model):
+def hl1_code_generator(instruction_path, test_index, call_model, model, config):
     print(f"instruction path: {instruction_path}")
 
     with open(instruction_path, "r") as f:
@@ -112,8 +165,7 @@ def gen_hl1_prompt(instruction_path, test_index, call_model):
         test = f"""
         **Test Case {i+1}**  
         **Input SPICE Netlist**  
-        ```
-        {data.netlist}
+        ```{data.netlist}
         ```
 
         **Expected Output**  (order of list elements does not matter)  
@@ -124,20 +176,60 @@ def gen_hl1_prompt(instruction_path, test_index, call_model):
         """
         testcase_str += test
 
-    prompt = gen_python_script_v4(
+    prompt = gen_python_script_chat_template_v4(
         instruction=generated_instruction,
         subcircuit_name="diode-connected transistors and load/compensation capacitors",
         testcase=testcase_str,
     )
 
-    print(prompt.invoke({}).to_string())
     if call_model:
-        model = load_openai(model_name="gpt-4.1")
-        output = (prompt | model).invoke({}).content
-        print(output)
+        chat_history = []
+        chain = prompt | model
+        message = f"""
+        **Instructions**  
+        ```
+        {generated_instruction}
+        ```
+
+        {testcase_str}
+        """
+
+        for i in range(config["max_retries"]):
+            response = chain.invoke({"chat_history": chat_history})
+            chat_history.append(HumanMessage(content=message))
+            chat_history.append(AIMessage(content=response.content))
+            response_path = os.path.join(
+                config["working_dir"],
+                f"response{i}.log",
+            )
+
+            with open(response_path, "w") as f:
+                f.write(response.content)
+
+            while True:
+                user_feedback = input(f"runtime errors occured [{i}]: ")
+                if user_feedback.startswith("yes") or user_feedback.startswith("no"):
+                    break
+
+            if user_feedback.startswith("yes"):
+                error_path = os.path.join(
+                    config["working_dir"],
+                    f"error{i}.log",
+                )
+                if os.path.exists(error_path):
+                    with open(error_path, "r") as f:
+                        error_msg = f.read()
+                    message = (
+                        update_python_script(error_message=error_msg)
+                        .invoke({})
+                        .to_string()
+                    )
+                    logger.info(message)
+            else:
+                break
 
 
-def gen_hl3_prompt(instruction_path, test_index, call_model):
+def hl3_code_generator(instruction_path, test_index, call_model, model, config):
     print(f"instruction path: {instruction_path}")
 
     with open(instruction_path, "r") as f:
@@ -168,17 +260,59 @@ def gen_hl3_prompt(instruction_path, test_index, call_model):
         """
         testcase_str += test
 
-    prompt = gen_python_script_v4(
+    prompt = gen_python_script_chat_template_v4(
         instruction=generated_instruction,
         subcircuit_name="amplification stages, feedback stages, load and bias parts",
         testcase=testcase_str,
     )
 
-    print(prompt.invoke({}).to_string())
+    # print(prompt.invoke({}).to_string())
     if call_model:
-        model = load_openai(model_name="gpt-4.1")
-        output = (prompt | model).invoke({}).content
-        print(output)
+        chat_history = []
+        chain = prompt | model
+
+        message = f"""
+        **Instructions**  
+        ```
+        {generated_instruction}
+        ```
+
+        {testcase_str}
+        """
+
+        for i in range(config["max_retries"]):
+            response = chain.invoke({"chat_history": chat_history})
+            chat_history.append(HumanMessage(content=message))
+            chat_history.append(AIMessage(content=response.content))
+            response_path = os.path.join(
+                config["working_dir"],
+                f"response{i}.log",
+            )
+
+            with open(response_path, "w") as f:
+                f.write(response.content)
+
+            while True:
+                user_feedback = input(f"runtime errors occured [{i}]: ")
+                if user_feedback.startswith("yes") or user_feedback.startswith("no"):
+                    break
+
+            if user_feedback.startswith("yes"):
+                error_path = os.path.join(
+                    config["working_dir"],
+                    f"error{i}.log",
+                )
+                if os.path.exists(error_path):
+                    with open(error_path, "r") as f:
+                        error_msg = f.read()
+                    message = (
+                        update_python_script(error_message=error_msg)
+                        .invoke({})
+                        .to_string()
+                    )
+                    logger.info(message)
+            else:
+                break
 
 
 @click.command()
@@ -207,15 +341,56 @@ def gen_hl3_prompt(instruction_path, test_index, call_model):
     "--call_model",
     default=False,
     prompt="should call model and get the output?",
-    help="enable invoking model (gpt-4o).",
+    help="should we can model invoke or just show the prompt.",
 )
-def code_generator(level, instruction_path, subcircuit_name, test_index, call_model):
-    if level == 1:
-        gen_hl1_prompt(instruction_path, test_index, call_model)
+@click.option(
+    "--model_name",
+    default="llama3.3:70b",
+    prompt="llm name: ",
+    help="which llm is used for code generation (default: gpt-4o).",
+)
+def code_generator(
+    level, instruction_path, subcircuit_name, test_index, call_model, model_name
+):
+    subcircuit_abbrev_map = {
+        "Current Mirror": "CM",
+        "Differential Pair": "DiffPair",
+        "Inverter": "Inverter",
+        "HL1": "HL1",
+        "HL3": "HL3",
+    }
+    subcircuit = subcircuit_abbrev_map[subcircuit_name]
+    if subcircuit == "HL1":
+        level = 1
+    elif subcircuit == "HL3":
+        level = 3
+    else:
+        level = 2
+    print(model_name, model_name)
+    model = load_llms(model_name)
     if level == 2:
-        hl2_code_generator(instruction_path, subcircuit_name, test_index, call_model)
+        name = f"{model_name}/HL2-{subcircuit}"
+    else:
+        name = f"{model_name}/{subcircuit}"
+
+    working_dir = f"outputs/integration/{name}"
+    Path(working_dir).mkdir(parents=True, exist_ok=True)
+    configure_logging(logdir=working_dir)
+
+    config = {
+        "model_name": model_name,
+        "level": level,
+        "working_dir": working_dir,
+        "max_retries": 20,
+    }
+    if level == 1:
+        hl1_code_generator(instruction_path, test_index, call_model, model, config)
+    if level == 2:
+        hl2_code_generator(
+            instruction_path, subcircuit_name, test_index, call_model, model, config
+        )
     if level == 3:
-        gen_hl3_prompt(instruction_path, test_index, call_model)
+        hl3_code_generator(instruction_path, test_index, call_model, model, config)
 
 
 if __name__ == "__main__":
