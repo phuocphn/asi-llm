@@ -1,35 +1,29 @@
 import glob
 import json
 import os
-import datetime
 import click
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from loguru import logger
-from calc1 import compute_cluster_metrics, average_metrics
 from src.netlist import SPICENetlist
 from prompt_collections.rules import (
-    create_gen_rule_prompt,
     gen_instruction_prompt,
     gen_instruction_hl3_prompt,
     update_instruction_prompt_v2,
     gen_instruction_hl1_prompt,
 )
 
-from prompt_collections.hl2 import (
-    create_prompt_hl2_multiple_subcircuits_with_rule_provided_v2,
-)
 
-from models import load_llms
+from models import load_llms, google_genai_model
 from utils import ppformat, configure_logging
 
 
-def get_demonstration_examples(samples=[56, 49, 51]):
+def get_demonstration_examples(netlist_ids=[56, 49, 51]):
     all_examples = []
     subcircuit_names = set()
 
     for dir in ["small", "medium"]:
-        for i in samples:  # range(1, 101):
+        for i in netlist_ids:
             netlist_dir = f"data/asi-fuboco-train/{dir}/{i}/"
             tree = ET.parse(
                 glob.glob(os.path.join(netlist_dir, "structure_result.xml"))[0]
@@ -47,66 +41,23 @@ def get_demonstration_examples(samples=[56, 49, 51]):
     return all_examples
 
 
-def create_examples(demonstration_examples):
-    examples = ""
-    for i, netlist in enumerate(demonstration_examples):
-        data = SPICENetlist(netlist)
-
-        examples += f"\nExample {i}: \nSPICE Netlist:\n\n```\n{data.netlist}```\nGround Truth: {data.hl2_gt}"
-        examples += "\n------------------------------"
-    return examples
-
-
-def gen_inital_rules(
-    save_path="data/gen_rules/gen_rules_0_deepseek.md", examples=None, model=None
-):
-    chain = create_gen_rule_prompt() | model
-    output = chain.invoke({"examples": create_examples(examples)})
-
-    Path("data/gen_rules").mkdir(parents=True, exist_ok=True)
-    with open(save_path, "w") as f:
-        f.write(output.content)
-
-
-def eval_rule(instruction, demonstration_examples, model):
-    results = []
-    logs = []
-
-    for ex in demonstration_examples:
-        data = SPICENetlist(ex)
-        prompt = create_prompt_hl2_multiple_subcircuits_with_rule_provided_v2(
-            instruction
-        )
-        _, parsed_data = llm_invoke(model, prompt, data)
-        eval_results = compute_cluster_metrics(
-            predicted=parsed_data, ground_truth=data.hl2_gt
-        )
-        results.append(eval_results)
-        logs.append(
-            {
-                "netlist": data.netlist,
-                "predicted": parsed_data,
-                "ground_truth": data.hl2_gt,
-                "eval_results": eval_results,
-            }
-        )
-
-    metrics = average_metrics(results)
-    return metrics, logs
-
-
 def model_call(model, prompt, data: SPICENetlist) -> list[str, str]:
     try:
-        chain = prompt | model  # | parser
-        output = chain.invoke({"netlist": data.netlist})
-        parsed_data = output.content[
-            output.content.find("<instruction>")
-            + len("<instruction>") : output.content.find("</instruction>")
+        if isinstance(model, google_genai_model):
+            prompt_content = prompt.invoke({"netlist": data.netlist}).to_string()
+            output = model.invoke(prompt_content)
+        else:
+            chain = prompt | model  # | parser
+            output = chain.invoke({"netlist": data.netlist}).content
+        
+        parsed_data = output[
+            output.find("<instruction>")
+            + len("<instruction>") : output.find("</instruction>")
         ]
 
         return output, parsed_data
     except json.decoder.JSONDecodeError as e:
-        logger.error(f"parsing LLM output failed: " + output.content)
+        logger.error(f"parsing LLM output failed: " + output)
         return None, None
 
     except Exception as e:
@@ -114,49 +65,8 @@ def model_call(model, prompt, data: SPICENetlist) -> list[str, str]:
         return None, None
 
 
-def llm_invoke(model, prompt, data: SPICENetlist) -> list[str, str]:
-    try:
-        # prompt = create_prompt_hl2()
-        logger.info(prompt.invoke(data.netlist).to_string())
-        chain = prompt | model  # | parser
-        output = chain.invoke({"netlist": data.netlist})
-        parsed_data = json.loads(
-            output.content[
-                output.content.find("<json>")
-                + len("<json>") : output.content.find("</json>")
-            ]
-        )
-        assert isinstance(parsed_data, list), "parsed data is not a list: " + str(
-            parsed_data
-        )
-        return output, parsed_data
-    except json.decoder.JSONDecodeError as e:
-        logger.error(f"parsing LLM output failed: " + output.content)
-        return None, None
-
-    except Exception as e:
-        logger.error(f"exception: {e}")
-        return None, None
-
-
-# @click.command()
-# @click.option(
-#     "--model_name",
-#     default="gpt-4.1",
-#     help="the LLM is used for instruction generation stage",
-# )
-# @click.option(
-#     "--subcircuit",
-#     default="HL1",
-#     prompt="which is the target subcircuit ?",
-#     help="which is the target subcircuit ?",
-#     type=click.Choice(
-#         ["HL1", "Current Mirror", "Differential Pair", "Inverter", "HL3"],
-#         case_sensitive=True,
-#     ),
-# )
 def gen_rules(model_name, subcircuit):
-    demonstration_examples = get_demonstration_examples([77, 55, 30])
+    demonstration_examples = get_demonstration_examples(netlist_ids=[77, 55, 30])
 
     logger.info(f"len of demonstration examples: {demonstration_examples}")
     subcircuit_abbrev_map = {
@@ -214,7 +124,7 @@ def gen_rules(model_name, subcircuit):
         logger.info(prompt.invoke({}).to_string())
 
         output, parsed_data = model_call(model, prompt, data)
-        # logger.info(f"output:" + output.content)
+        logger.info(f"output:" + output)
         logger.info(f"Parsed data: {parsed_data}")
 
         with open(os.path.join(working_dir, f"instruction-{index}.md"), "w") as f:
@@ -245,16 +155,13 @@ def gen_rules(model_name, subcircuit):
                 instruction_2=parsed_data,
             )
             output, parsed_data = model_call(model, prompt, data)
-            logger.info(f"instruction update-output:" + output.content)
+            logger.info(f"instruction update-output:" + output)
             logger.info(f"instruction update-Parsed data: {parsed_data}")
 
             with open(
                 os.path.join(working_dir, f"instruction-{index}-revised.md"), "w"
             ) as f:
                 f.write(parsed_data)
-
-    # with open(os.path.join(working_dir, f"instruction-{index}-revised.md"), "r") as f:
-    #     final_generated_instruction = f.read()
 
 
 @click.command()
