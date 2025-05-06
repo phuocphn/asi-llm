@@ -18,6 +18,9 @@ from prompt_collections.hl2 import (
     prompt_hl2_direct_prompting_single_subcircuit,
     prompt_hl2_direct_prompting_single_subcircuit_with_instrucion,
 )
+from prompt_collections.hl3 import (
+    prompt_hl3_direct_prompting_multiple_subcircuits_with_instrucion,
+)
 
 
 def llm_invoke(model, prompt, data: SPICENetlist) -> list[str, str]:
@@ -117,7 +120,11 @@ def find_subcircuits(
             fw.write("hl2_gt: \n" + ppformat(data.hl2_gt))
 
         with open(f"{result_dir}/gt.json", "w") as fw:
-            content = {"hl1_gt": data.hl1_gt, "hl2_gt": data.hl2_gt}
+            content = {
+                "hl1_gt": data.hl1_gt,
+                "hl2_gt": data.hl2_gt,
+                "hl3_gt": data.hl3_gt,
+            }
             fw.write(json.dumps(content, indent=2))
 
         for prompt_index, prompt in enumerate(prompts):
@@ -225,6 +232,33 @@ def main(config: DictConfig) -> None:
                                 metadata=metadata,
                             )
                         )
+                elif category.startswith("HL3"):
+                    result = None
+                    prompts = []
+                    instruction_path = os.path.join(
+                        "outputs",
+                        "instruction_generation",
+                        model_name,
+                        "HL3",
+                        "instruction-5.md",
+                    )
+                    with open(instruction_path, "r") as f:
+                        instruction_src = f.read()
+
+                    prompts.append(
+                        prompt_hl3_direct_prompting_multiple_subcircuits_with_instrucion(
+                            instruction_src
+                        )
+                    )
+                    result = average_metrics(
+                        find_subcircuits(
+                            subset,
+                            model,
+                            prompts=prompts,
+                            category=category,
+                            metadata=metadata,
+                        )
+                    )
 
                 content = f"**result**: model={model_name},category={category}:{result}"
                 logger.info(content)
