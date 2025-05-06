@@ -29,7 +29,7 @@ def prompt_hl1_direct_prompting():
                 + "Provide your output as a list of tuples. Each tuple must contain two elements:\n"
                 + "- The first element indicates the type of device, which must be one of the following: `MosfetDiode`, `load_cap`, or `compensation_cap`\n"
                 + "- The second element is a list of transistor or capacitor names that belong to this building block\n"
-                + "Wrap your response between `<json>` and `</json>` tags. Do not include any explanation, description, or comments.\n",
+                + "Wrap your response between `<result>` and `</result>` tags. Do not include any explanation, description, or comments.\n",
             ),
             ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]

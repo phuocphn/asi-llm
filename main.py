@@ -29,16 +29,12 @@ def llm_invoke(model, prompt, data: SPICENetlist) -> list[str, str]:
         chain = prompt | model  # | parser
         output = chain.invoke({"netlist": data.netlist}).content
         parsed_data = eval(
-            output[output.find("<json>") + len("<json>") : output.find("</json>")]
+            output[output.find("<result>") + len("<result>") : output.find("</result>")]
         )
         assert isinstance(
             parsed_data, list
         ), f"parsed_data invalid type: {type(parsed_data)}"
         return output, parsed_data
-    except json.decoder.JSONDecodeError as e:
-        logger.error(f"parsing LLM output failed: " + output)
-        return None, None
-
     except Exception as e:
         logger.error(f"exception: {e}")
         return None, None
@@ -176,9 +172,9 @@ def main(config: DictConfig) -> None:
             model = load_llms(model_name)
 
             for category in config.categories:
-                llm_output_dir = f"{os.path.join(save_dir, model_name,  'llm_outputs',  category, subset )}"
+                llm_output_dir = f"{os.path.join(save_dir, model_name, 'llm_outputs',  category, subset )}"
                 if not os.path.exists(llm_output_dir):
-                    os.makedirs(llm_output_dir)
+                    Path(llm_output_dir).mkdir(parents=True, exist_ok=True)
 
                 metadata = {
                     "subset": subset,
@@ -260,7 +256,7 @@ def main(config: DictConfig) -> None:
                         )
                     )
 
-                content = f"**result**: model={model_name},category={category}:{result}"
+                content = f"**result**: model={model_name},subset={subset},category={category}:{result}"
                 logger.info(content)
                 with open(os.path.join(save_dir, model_name, "result.txt"), "a") as fw:
                     fw.write(content + "\n")
