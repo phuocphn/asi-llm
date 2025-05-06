@@ -1,38 +1,30 @@
-break_hl2_prompt: false
+break_hl2_prompt: true
 subcircuits:
-  "Differential Pair": "DiffPair"
-  "Current Mirror": "CM"
-  "Inverter": "Inverter"
-
-categories:
-  - single
-  - pair
-
-small_llms:
-  - "mistral:7b-instruct"
-  - "mixtral:8x22b"
-
-medium_llms:
-  - "llama3.3:70b"
-  - "llama3:70b"
-  - "llama3:70b-instruct"
-
-all_llms:
-  - "llama3.3:70b"
-  - "llama3:70b"
-  - "llama3:70b-instruct"
-  - "mistral:7b-instruct"
-  - "mixtral:8x22b"
-
-proprietary_llms: 
-  - "deepseek"
-
-eval_llms: small
+  - "Differential Pair"
+  - "Current Mirror"
+  - "Inverter"
 
 benchmark_subsets:
   - small
   - medium
   - large
+
+categories:
+  - HL1
+  - HL2-CM
+  - HL2-DiffPair
+  - HL2-Inverter
+  - HL3
+
+opensource_llms:
+  - "llama3.3:70b"
+
+all_llms:
+  - "llama3.3:70b"
+  - "gpt-4.1"
+  - "grok-3-beta"
+
+eval_llm_set: opensource_llms
 
 
 rule_provided: false
