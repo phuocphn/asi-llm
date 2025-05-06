@@ -1,8 +1,5 @@
 break_hl2_prompt: true
-subcircuits:
-  - "Differential Pair"
-  - "Current Mirror"
-  - "Inverter"
+
 
 benchmark_subsets:
   - small
@@ -11,10 +8,13 @@ benchmark_subsets:
 
 categories:
   - HL1
-  - HL2-CM
-  - HL2-DiffPair
-  - HL2-Inverter
+  - HL2
   - HL3
+
+HL2_subcircuits:
+  - "Differential Pair"
+  - "Current Mirror"
+  - "Inverter"
 
 opensource_llms:
   - "llama3.3:70b"

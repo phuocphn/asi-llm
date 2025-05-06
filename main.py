@@ -158,6 +158,12 @@ def main(config: DictConfig) -> None:
     else:
         raise ValueError(f"Unknown eval_llm_set: {config.eval_llm_set}")
 
+    instruction_dir = {
+        "Differential Pair": "HL2-DiffPair",
+        "Current Mirror": "HL2-CM",
+        "Inverter": "HL2-Inverter",
+    }
+
     for subset in config.benchmark_subsets:
         for model_name in eval_models:
             model = load_llms(model_name)
@@ -189,13 +195,13 @@ def main(config: DictConfig) -> None:
                 elif category.startswith("HL2"):
                     if config.break_hl2_prompt:
                         prompts = []
-                        for sc in config.subcircuits:
+                        for sc in config.HL2_subcircuits:
                             if config.rule_provided:
                                 instruction_path = os.path.join(
                                     "outputs",
                                     "instruction_generation",
                                     model_name,
-                                    category,
+                                    instruction_dir[sc],
                                     "instruction-5.md",
                                 )
                                 with open(instruction_path, "r") as f:
