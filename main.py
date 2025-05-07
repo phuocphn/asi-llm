@@ -13,6 +13,7 @@ from utils import ppformat, configure_logging
 from models import load_llms
 from prompt_collections.hl1 import (
     prompt_hl1_direct_prompting,
+    prompt_hl1_direct_prompting_with_instrucion,
 )
 from prompt_collections.hl2 import (
     prompt_hl2_direct_prompting_single_subcircuit,
@@ -28,6 +29,7 @@ def llm_invoke(model, prompt, data: SPICENetlist) -> list[str, str]:
         logger.info(prompt.invoke(data.netlist).to_string())
         chain = prompt | model  # | parser
         output = chain.invoke({"netlist": data.netlist}).content
+        logger.info("output before parsing: " + str(output))
         parsed_data = eval(
             output[output.find("<result>") + len("<result>") : output.find("</result>")]
         )
@@ -184,16 +186,40 @@ def main(config: DictConfig) -> None:
                 }
 
                 if category.startswith("HL1"):
-                    prompt = prompt_hl1_direct_prompting()
-                    result = average_metrics(
-                        find_subcircuits(
-                            subset,
-                            model,
-                            prompts=[prompt],
-                            category=category,
-                            metadata=metadata,
+                    if config.rule_provided:
+                        instruction_path = os.path.join(
+                            "outputs",
+                            "instruction_generation",
+                            model_name,
+                            "HL1",
+                            "instruction-5.md",
                         )
-                    )
+                        with open(instruction_path, "r") as f:
+                            instruction_src = f.read()
+                        prompt = prompt_hl1_direct_prompting_with_instrucion(
+                            instruction_src
+                        )
+                        result = average_metrics(
+                            find_subcircuits(
+                                subset,
+                                model,
+                                prompts=[prompt],
+                                category=category,
+                                metadata=metadata,
+                            )
+                        )
+
+                    else:
+                        prompt = prompt_hl1_direct_prompting()
+                        result = average_metrics(
+                            find_subcircuits(
+                                subset,
+                                model,
+                                prompts=[prompt],
+                                category=category,
+                                metadata=metadata,
+                            )
+                        )
 
                 elif category.startswith("HL2"):
                     if config.break_hl2_prompt:
@@ -229,32 +255,32 @@ def main(config: DictConfig) -> None:
                             )
                         )
                 elif category.startswith("HL3"):
-                    result = None
-                    prompts = []
-                    instruction_path = os.path.join(
-                        "outputs",
-                        "instruction_generation",
-                        model_name,
-                        "HL3",
-                        "instruction-5.md",
-                    )
-                    with open(instruction_path, "r") as f:
-                        instruction_src = f.read()
+                    if config.rule_provided:
+                        result = None
+                        instruction_path = os.path.join(
+                            "outputs",
+                            "instruction_generation",
+                            model_name,
+                            "HL3",
+                            "instruction-5.md",
+                        )
+                        with open(instruction_path, "r") as f:
+                            instruction_src = f.read()
 
-                    prompts.append(
-                        prompt_hl3_direct_prompting_multiple_subcircuits_with_instrucion(
+                        prompt = prompt_hl3_direct_prompting_multiple_subcircuits_with_instrucion(
                             instruction_src
                         )
-                    )
-                    result = average_metrics(
-                        find_subcircuits(
-                            subset,
-                            model,
-                            prompts=prompts,
-                            category=category,
-                            metadata=metadata,
+                        result = average_metrics(
+                            find_subcircuits(
+                                subset,
+                                model,
+                                prompts=[prompt],
+                                category=category,
+                                metadata=metadata,
+                            )
                         )
-                    )
+                    else:
+                        raise NotImplementedError("hl3 without instruction provided!")
 
                 content = f"**result**: model={model_name},subset={subset},category={category}:{result}"
                 logger.info(content)

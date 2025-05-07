@@ -20,9 +20,9 @@ opensource_llms:
   - "llama3.3:70b"
 
 all_llms:
-  - "llama3.3:70b"
-  - "gpt-4.1"
+  - "deepseek-reasoner"
   - "grok-3-beta"
+  - "gpt-4.1"
 
 eval_llm_set: opensource_llms
 
