@@ -141,11 +141,6 @@ def compute_cluster_metrics(predicted, ground_truth):
                         f"**`{cluster_iid}`, pair-wise check**: {t1=}, {t2=}, {gt_overlap_cluster=}"
                     )
 
-                    # 'm4': {'cluster_names': ['CM', 'Inverter'], 'cluster_ids': [0, 4]}
-                    # 'm2': {'cluster_names': ['CM'], 'cluster_ids': [4]}
-                    # overlap_cluster should be an empty set.
-                    # logger.debug(f"overlap_cluster: {overlap_cluster=}")
-
                     if len(gt_overlap_cluster) == 0:
                         correct_assignments[t1] = 0
                         correct_assignments[t2] = 0
@@ -162,66 +157,6 @@ def compute_cluster_metrics(predicted, ground_truth):
                         correct_assignments[t1] = 0
                         correct_assignments[t2] = 0
 
-                    """
-                    for t1_id, t1_cluster_name in enumerate(
-                        pred_mapping[t1]["cluster_names"]
-                    ):
-                        for t2_id, t2_cluster_name in enumerate(
-                            pred_mapping[t2]["cluster_names"]
-                        ):
-                            # make sure the two checking transistors (t1, t2) are in the same cluster in the predicted mapping
-                            # and check if they are in the same cluster in the ground truth mapping
-                            if (
-                                t1_cluster_name == t2_cluster_name
-                                and pred_mapping[t1]["cluster_ids"][t1_id]
-                                == pred_mapping[t2]["cluster_ids"][t2_id]
-                            ):
-                                # If the cluster names and IDs match, mark them as correct
-                                gt_overlap_cluster = set(
-                                    set(
-                                        [
-                                            name + "-" + str(cluster_id)
-                                            for name, cluster_id in zip(
-                                                gt_mapping[t1]["cluster_names"],
-                                                gt_mapping[t1]["cluster_ids"],
-                                            )
-                                        ]
-                                    )
-                                    & set(
-                                        [
-                                            name + "-" + str(cluster_id)
-                                            for name, cluster_id in zip(
-                                                gt_mapping[t2]["cluster_names"],
-                                                gt_mapping[t2]["cluster_ids"],
-                                            )
-                                        ]
-                                    )
-                                )
-                                logger.debug(
-                                    f"**`{cluster_iid}`, pair-wise check**: {t1=}, {t2=}, {gt_overlap_cluster=}"
-                                )
-
-                                # 'm4': {'cluster_names': ['CM', 'Inverter'], 'cluster_ids': [0, 4]}
-                                # 'm2': {'cluster_names': ['CM'], 'cluster_ids': [4]}
-                                # overlap_cluster should be an empty set.
-                                # logger.debug(f"overlap_cluster: {overlap_cluster=}")
-
-                                if len(gt_overlap_cluster) == 0:
-                                    correct_assignments[t1] = 0
-                                    correct_assignments[t2] = 0
-
-                                is_same_cluster = False
-                                for cluster in gt_overlap_cluster:
-                                    if (
-                                        cluster[: cluster.find("-")]
-                                        == cluster_iid[: cluster_iid.find("-")]
-                                    ):
-                                        is_same_cluster = True
-                                        break
-                                if not is_same_cluster:
-                                    correct_assignments[t1] = 0
-                                    correct_assignments[t2] = 0
-                    """
         logger.debug("--------------------")
         logger.debug(f"**after** pair-wise check: {correct_assignments=}")
         logger.debug("--------------------")
