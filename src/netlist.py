@@ -17,6 +17,16 @@ class SPICENetlist:
         self.hl3_gt = get_hl3_cluster_labels(netlist_path)
 
     @property
+    def num_transistors(self):
+        count = 0
+        for component in self.netlist.strip().split("\n"):
+            infos = component.split(" ")
+            component_name = infos[0]
+            if component_name.startswith("m"):
+                count += 1
+        return count
+
+    @property
     def get_graph_labels(self) -> Dict[str, Tuple[List, List, List]]:
         labels = defaultdict(list)
         subcircuit_name_to_label_ids_mapping = {
