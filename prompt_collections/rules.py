@@ -422,6 +422,55 @@ def gen_python_script_chat_template_v4(
     return prompt
 
 
+def gen_pythoncode_without_instruction(
+    subcircuit_name: str = "Current Mirrors",
+    instruction: str = None,
+    testcase: str = None,
+):
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                f"""
+    You are an experienced Python programmer working on identifying **{subcircuit_name}** in a SPICE netlist.  
+    
+    Your task is to:
+    - Write a Python script for identifying **{subcircuit_name}**.  
+    - The generated Python script should extract a list of all available **{subcircuit_name}** from a new, unseen SPICE netlist.
+    - The generated Python script should follow the function template below:
+
+        ```python
+        def findSubCircuit(netlist: str): 
+            \"\"\"
+            Find all {subcircuit_name} subcircuits.
+
+            Args:
+                netlist (str): A flat SPICE netlist as a string, where each line defines a component and its connections in the circuit.
+
+            Returns:
+                List of tuples containing identified subcircuit names and the corresponding transistors.
+            \"\"\"
+            # add your code here
+        ```
+
+    - For each given test case, write an assertion to ensure the returned output matches the expected output.
+    - In addition to the assertion, print the expected output, actual output, and any relevant information to assist in debugging if the result is not as expected.
+
+    Let's think step by step.
+    """,
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            (
+                "human",
+                f"""
+            {testcase}
+             """,
+            ),
+        ]
+    )
+    return prompt
+
+
 def gen_instruction_hl1_prompt(
     netlist: str = None,
     hl1_gt: list[dict] = None,

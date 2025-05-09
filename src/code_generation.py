@@ -5,7 +5,9 @@ from prompt_collections.rules import (
     gen_python_script_v4,
     gen_python_script_chat_template_v4,
     update_python_script,
+    gen_pythoncode_without_instruction,
 )
+
 from src.netlist import SPICENetlist
 from pathlib import Path
 
@@ -50,8 +52,11 @@ def hl2_code_generator(
     logger.info(f"subcircuit name: {subcircuit_name}")
     logger.info(f"instruction path: {instruction_path}")
 
-    with open(instruction_path, "r") as f:
-        generated_instruction = f.read()
+    if instruction_path is not None:
+        with open(instruction_path, "r") as f:
+            generated_instruction = f.read()
+    else:
+        generated_instruction = None
 
     subcircuit_abbrev_map = {
         "Current Mirror": "CM",
@@ -90,7 +95,12 @@ def hl2_code_generator(
         """
         testcase_str += test
 
-    prompt = gen_python_script_chat_template_v4(
+    template = (
+        gen_python_script_chat_template_v4
+        if instruction_path
+        else gen_pythoncode_without_instruction
+    )
+    prompt = template(
         instruction=generated_instruction,
         subcircuit_name=subcircuit_name + "s",
         testcase=testcase_str,
@@ -149,8 +159,11 @@ def hl2_code_generator(
 def hl1_code_generator(instruction_path, test_index, call_model, model, config):
     print(f"instruction path: {instruction_path}")
 
-    with open(instruction_path, "r") as f:
-        generated_instruction = f.read()
+    if instruction_path is not None:
+        with open(instruction_path, "r") as f:
+            generated_instruction = f.read()
+    else:
+        generated_instruction = None
 
     testcase_str = ""
     for i, testcase_netlist in enumerate(demonstration_netlists[test_index]):
@@ -176,7 +189,12 @@ def hl1_code_generator(instruction_path, test_index, call_model, model, config):
         """
         testcase_str += test
 
-    prompt = gen_python_script_chat_template_v4(
+    template = (
+        gen_python_script_chat_template_v4
+        if instruction_path
+        else gen_pythoncode_without_instruction
+    )
+    prompt = template(
         instruction=generated_instruction,
         subcircuit_name="diode-connected transistors and load/compensation capacitors",
         testcase=testcase_str,
@@ -232,8 +250,11 @@ def hl1_code_generator(instruction_path, test_index, call_model, model, config):
 def hl3_code_generator(instruction_path, test_index, call_model, model, config):
     print(f"instruction path: {instruction_path}")
 
-    with open(instruction_path, "r") as f:
-        generated_instruction = f.read()
+    if instruction_path is not None:
+        with open(instruction_path, "r") as f:
+            generated_instruction = f.read()
+    else:
+        generated_instruction = None
 
     testcase_str = ""
     for i, testcase_netlist in enumerate(demonstration_netlists[test_index]):
@@ -260,7 +281,12 @@ def hl3_code_generator(instruction_path, test_index, call_model, model, config):
         """
         testcase_str += test
 
-    prompt = gen_python_script_chat_template_v4(
+    template = (
+        gen_python_script_chat_template_v4
+        if instruction_path
+        else gen_pythoncode_without_instruction
+    )
+    prompt = template(
         instruction=generated_instruction,
         subcircuit_name="amplification stages, feedback stages, load and bias parts",
         testcase=testcase_str,
@@ -323,7 +349,7 @@ def hl3_code_generator(instruction_path, test_index, call_model, model, config):
 )
 @click.option(
     "--instruction_path",
-    default="/tmp/abc.txt",
+    default=None,
     help="path to the markdown instruction file.",
 )
 @click.option(
@@ -373,7 +399,11 @@ def code_generator(
     else:
         name = f"{model_name}/{subcircuit}"
 
-    working_dir = f"outputs/integration/{name}"
+    if instruction_path is None:
+        dirname = "direct.code"
+    else:
+        dirname = "instruction+code"
+    working_dir = f"outputs/{dirname}/{name}"
     Path(working_dir).mkdir(parents=True, exist_ok=True)
     configure_logging(logdir=working_dir)
 
