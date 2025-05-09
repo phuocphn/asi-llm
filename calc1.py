@@ -1,25 +1,13 @@
-from collections import defaultdict
-import itertools
-import json
-
-
-from loguru import logger
 import sys
 import datetime
+import pprint
 
-log_level = "INFO"
-log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-logfile = f"logs/{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}.txt"
-logger.remove()  # Why does it logs duplicated message? · Issue #208 · Delgan/loguru https://github.com/Delgan/loguru/issues/208
-logger.add(
-    sys.stderr,
-    level=log_level,
-    format=log_format,
-    colorize=True,
-    backtrace=True,
-    diagnose=True,
-)
-# logger.add(logfile, level=log_level, format=log_format, colorize=False, backtrace=True, diagnose=True)
+from loguru import logger
+
+from collections import defaultdict
+from utils import configure_logging
+
+configure_logging(level="INFO")
 
 
 def assign_cluster_ids(subcircuits: list[(str, list)]):
@@ -28,28 +16,26 @@ def assign_cluster_ids(subcircuits: list[(str, list)]):
     cluster_id = 0
     for subcircuit_name, components in subcircuits:
         for transistor in components:
-            if transistor.lower() not in transistor_to_cluster:
-                transistor_to_cluster[transistor.lower()] = {
+            t = transistor.lower()
+            # Check if the transistor is already in the mapping
+            if t not in transistor_to_cluster:
+                transistor_to_cluster[t] = {
                     "cluster_names": [subcircuit_name],
                     "cluster_ids": [cluster_id],
                 }
+                logger.debug(
+                    f"Assigning new cluster ID {cluster_id} to transistor {t} in subcircuit {subcircuit_name}"
+                )
+            # If the transistor is already in the mapping, update its cluster information
             else:
-                new_cluster_names = list(
-                    set(
-                        transistor_to_cluster[transistor.lower()]["cluster_names"]
-                        + [subcircuit_name]
-                    )
-                )
-                new_cluster_ids = list(
-                    set(
-                        transistor_to_cluster[transistor.lower()]["cluster_ids"]
-                        + [cluster_id]
-                    )
-                )
-                transistor_to_cluster[transistor.lower()] = {
-                    "cluster_names": new_cluster_names,
-                    "cluster_ids": new_cluster_ids,
+                current_data = transistor_to_cluster[t]
+                transistor_to_cluster[t] = {
+                    "cluster_names": current_data["cluster_names"] + [subcircuit_name],
+                    "cluster_ids": current_data["cluster_ids"] + [cluster_id],
                 }
+                logger.debug(
+                    f"Updating transistor {t} with new cluster ID {cluster_id} in subcircuit {subcircuit_name}"
+                )
 
         cluster_id += 1
     return transistor_to_cluster
@@ -63,37 +49,38 @@ def print_json_content(data):
 def get_cluster_id_transistor_mapping(mapping):
     cluster_map = defaultdict(list)
     for t, cluster_info in mapping.items():
-        for cluster_id in cluster_info["cluster_ids"]:
-            cluster_map[cluster_id].append(t)
+        for cluster_name, cluster_id in zip(
+            cluster_info["cluster_names"], cluster_info["cluster_ids"]
+        ):
+            cluster_map[cluster_name + "-" + str(cluster_id)].append(t)
     return cluster_map
-
-
-# def filter_invalid_subcircuits(data: list[(str, list)]):
-#     """Filter out invalid subcircuits (do not match desired keys)."""
-#     filtered_data = []
-#     for subcircuit_name, components in data:
-#         if "sub_circuit_name" in entry and "transistor_names" in entry:
-#             filtered_data.append(entry)
-#     return filtered_data
 
 
 def compute_cluster_metrics(predicted, ground_truth):
     """Compute correctness of transistor assignments with subcircuit type consideration."""
 
-    # Filter out invalid subcircuits
-    # predicted = filter_invalid_subcircuits(predicted)
-    # ground_truth = filter_invalid_subcircuits(ground_truth)
-
     # assign cluster IDs to transistors in both predicted and ground truth data
     pred_mapping = assign_cluster_ids(predicted)
     gt_mapping = assign_cluster_ids(ground_truth)
 
-    logger.debug("map:\n\n")
+    logger.debug(f"pred_mapping :\n\n {pred_mapping}")
+    logger.debug(f"gt_mapping :\n\n {gt_mapping}")
 
     gt_cluster_id_mapping = get_cluster_id_transistor_mapping(gt_mapping)
     pred_cluster_id_mapping = get_cluster_id_transistor_mapping(pred_mapping)
-    logger.debug(f"{gt_cluster_id_mapping=}")
-    logger.debug(f"{pred_cluster_id_mapping=}")
+    logger.debug("gt_cluster_id_mapping:")
+    logger.debug(pprint.pformat(gt_cluster_id_mapping, indent=4))
+    logger.debug("pred_cluster_id_mapping:")
+    logger.debug(pprint.pformat(pred_cluster_id_mapping, indent=4))
+
+    # Example output (for illustration):
+    # { 'Inverter-0': ['m3', 'm4', 'm7', 'm5'],
+    #   'CM-4': ['m3', 'm4', 'm2'],
+    #   'DiffPair-2': ['m7', 'm6'],
+    #   'CM-5': ['m5', 'm1', 'm11'],
+    #   'Inverter-1': ['m9', 'm10', 'm8'],
+    #   'CM-3': ['m9', 'm10', 'm12', 'm13']
+    # }
 
     is_hierarchical_level1 = ground_truth[0][0] in [
         "MosfetDiode",
@@ -114,31 +101,130 @@ def compute_cluster_metrics(predicted, ground_truth):
                     correct_assignments[t] = 1
 
     if not is_hierarchical_level1:
+        logger.debug("--------------------")
         logger.debug(f"**before** pair-wise check: {correct_assignments=}")
-        for _, list_transistors in pred_cluster_id_mapping.items():
-            for t in list_transistors:
-                for tt in reversed(list_transistors):
-                    if t == tt:
+        logger.debug("--------------------")
+
+        for cluster_iid, list_transistors in pred_cluster_id_mapping.items():
+            for t1 in list_transistors:
+                for t2 in reversed(list_transistors):
+                    if t1 == t2:
                         continue
 
-                    if t not in gt_mapping or tt not in gt_mapping:
-                        correct_assignments[t] = 0
-                        correct_assignments[tt] = 0
+                    if t1 not in gt_mapping or t2 not in gt_mapping:
+                        correct_assignments[t1] = 0
+                        correct_assignments[t2] = 0
                         continue
 
-                    if (
-                        len(
-                            set(gt_mapping[t]["cluster_ids"])
-                            & set(gt_mapping[tt]["cluster_ids"])
+                    # If the cluster names and IDs match, mark them as correct
+                    gt_overlap_cluster = set(
+                        set(
+                            [
+                                name + "-" + str(cluster_id)
+                                for name, cluster_id in zip(
+                                    gt_mapping[t1]["cluster_names"],
+                                    gt_mapping[t1]["cluster_ids"],
+                                )
+                            ]
                         )
-                        == 0
-                    ):
-                        # logger.debug(f"{set(gt_mapping[t]['cluster_ids'])=}")
-                        # logger.debug(f"{set(gt_mapping[list_transistors[i+1]]['cluster_ids'])=}")
-                        correct_assignments[t] = 0
-                        correct_assignments[tt] = 0
+                        & set(
+                            [
+                                name + "-" + str(cluster_id)
+                                for name, cluster_id in zip(
+                                    gt_mapping[t2]["cluster_names"],
+                                    gt_mapping[t2]["cluster_ids"],
+                                )
+                            ]
+                        )
+                    )
+                    logger.debug(
+                        f"**`{cluster_iid}`, pair-wise check**: {t1=}, {t2=}, {gt_overlap_cluster=}"
+                    )
 
+                    # 'm4': {'cluster_names': ['CM', 'Inverter'], 'cluster_ids': [0, 4]}
+                    # 'm2': {'cluster_names': ['CM'], 'cluster_ids': [4]}
+                    # overlap_cluster should be an empty set.
+                    # logger.debug(f"overlap_cluster: {overlap_cluster=}")
+
+                    if len(gt_overlap_cluster) == 0:
+                        correct_assignments[t1] = 0
+                        correct_assignments[t2] = 0
+
+                    is_same_cluster = False
+                    for cluster in gt_overlap_cluster:
+                        if (
+                            cluster[: cluster.find("-")]
+                            == cluster_iid[: cluster_iid.find("-")]
+                        ):
+                            is_same_cluster = True
+                            break
+                    if not is_same_cluster:
+                        correct_assignments[t1] = 0
+                        correct_assignments[t2] = 0
+
+                    """
+                    for t1_id, t1_cluster_name in enumerate(
+                        pred_mapping[t1]["cluster_names"]
+                    ):
+                        for t2_id, t2_cluster_name in enumerate(
+                            pred_mapping[t2]["cluster_names"]
+                        ):
+                            # make sure the two checking transistors (t1, t2) are in the same cluster in the predicted mapping
+                            # and check if they are in the same cluster in the ground truth mapping
+                            if (
+                                t1_cluster_name == t2_cluster_name
+                                and pred_mapping[t1]["cluster_ids"][t1_id]
+                                == pred_mapping[t2]["cluster_ids"][t2_id]
+                            ):
+                                # If the cluster names and IDs match, mark them as correct
+                                gt_overlap_cluster = set(
+                                    set(
+                                        [
+                                            name + "-" + str(cluster_id)
+                                            for name, cluster_id in zip(
+                                                gt_mapping[t1]["cluster_names"],
+                                                gt_mapping[t1]["cluster_ids"],
+                                            )
+                                        ]
+                                    )
+                                    & set(
+                                        [
+                                            name + "-" + str(cluster_id)
+                                            for name, cluster_id in zip(
+                                                gt_mapping[t2]["cluster_names"],
+                                                gt_mapping[t2]["cluster_ids"],
+                                            )
+                                        ]
+                                    )
+                                )
+                                logger.debug(
+                                    f"**`{cluster_iid}`, pair-wise check**: {t1=}, {t2=}, {gt_overlap_cluster=}"
+                                )
+
+                                # 'm4': {'cluster_names': ['CM', 'Inverter'], 'cluster_ids': [0, 4]}
+                                # 'm2': {'cluster_names': ['CM'], 'cluster_ids': [4]}
+                                # overlap_cluster should be an empty set.
+                                # logger.debug(f"overlap_cluster: {overlap_cluster=}")
+
+                                if len(gt_overlap_cluster) == 0:
+                                    correct_assignments[t1] = 0
+                                    correct_assignments[t2] = 0
+
+                                is_same_cluster = False
+                                for cluster in gt_overlap_cluster:
+                                    if (
+                                        cluster[: cluster.find("-")]
+                                        == cluster_iid[: cluster_iid.find("-")]
+                                    ):
+                                        is_same_cluster = True
+                                        break
+                                if not is_same_cluster:
+                                    correct_assignments[t1] = 0
+                                    correct_assignments[t2] = 0
+                    """
+        logger.debug("--------------------")
         logger.debug(f"**after** pair-wise check: {correct_assignments=}")
+        logger.debug("--------------------")
 
     num_correct_assignments = sum([c for _, c in correct_assignments.items()])
 
@@ -247,32 +333,16 @@ if __name__ == "__main__":
 
     # Example Data
     predicted = [
-        {"sub_circuit_name": "DiffPair", "transistor_names": ["m17", "m18"]},
-        {"sub_circuit_name": "DiffPair", "transistor_names": ["m14", "m15"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m2", "m3"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m7", "m9"]},
-        {"sub_circuit_name": "Inverter", "transistor_names": ["m19", "m20"]},
-        {"sub_circuit_name": "Inverter", "transistor_names": ["m22", "m23"]},
+        ("DiffPair", ["m17", "m18"]),
     ]
-
     ground_truth = [
-        # note that `m21`, `m24` are part of current mirror (CM), but also as loads of Inverters.
-        {"sub_circuit_name": "Inverter", "transistor_names": ["m21", "m19", "m20"]},
-        {"sub_circuit_name": "Inverter", "transistor_names": ["m24", "m22", "m23"]},
-        {"sub_circuit_name": "DiffPair", "transistor_names": ["m17", "m18"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m28", "m7"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m28", "m9"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m28", "m16"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m28", "m21"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m28", "m24"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m28", "m2"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m28", "m3"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m5", "m14"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m5", "m15"]},
-        {"sub_circuit_name": "CM", "transistor_names": ["m25", "m1"]},
+        ("DiffPair", ["m17", "m18"]),
+        ("DiffPair", ["m14", "m15"]),
+        ("CM", ["m2", "m4"]),
+        ("CM", ["m7", "m9"]),
+        ("Inverter", ["m19", "m20"]),
+        ("Inverter", ["m22", "m23"]),
     ]
-
     ground_truth = merge_cm_transistor_cluster(ground_truth)
-
     metrics = compute_cluster_metrics(predicted, ground_truth)
     print(metrics)
