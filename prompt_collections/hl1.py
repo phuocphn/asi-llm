@@ -34,7 +34,23 @@ def prompt_hl1_direct_prompting():
             ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
     )
-    return v2
+
+    v3 = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract diode-connected transistors (`MosfetDiode`), load capacitors (`load_cap`), and compensation capacitors (`compensation_cap`).\n"
+                + "Provide your answer in JSON format.\n"
+                + "The output should be a list of dictionaries. Each dictionary must have two keys:\n"
+                + "- 'sub_circuit_name': the type of device, corresponding to one of the acronyms (MosfetDiode, load_cap, or compensation_cap)\n"
+                + "- 'components': a list of component names that belong to this building block\n"
+                + "Wrap your response between `<json>` and `</json>` tags. Do not include any explanation, description, or comments.\n",
+            ),
+            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
+        ]
+    )
+
+    return v3
 
 
 def prompt_hl1_direct_prompting_with_instrucion(instruction_src=None):
@@ -54,4 +70,20 @@ def prompt_hl1_direct_prompting_with_instrucion(instruction_src=None):
             ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
         ]
     )
-    return v2
+    v3 = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an experienced analog circuit designer. Given a SPICE netlist, your task is to identify and extract diode-connected transistors (`MosfetDiode`), load capacitors (`load_cap`), and compensation capacitors (`compensation_cap`).\n"
+                + f"When answering the question, use the provided instructions to improve the identification accuracy. "
+                + "Provide your answer in JSON format.\n"
+                + "The output should be a list of dictionaries. Each dictionary must have two keys:\n"
+                + "- 'sub_circuit_name': the type of device, corresponding to one of the acronyms (MosfetDiode, load_cap, or compensation_cap)\n"
+                + "- 'components': a list of component names that belong to this device type.\n"
+                + "Wrap your response between `<json>` and `</json>` tags. Do not include any explanation, description, or comments.\n"
+                + f"Provided Identification Instructions:\n{instruction_src}\n",
+            ),
+            ("human", "Input SPICE netlist:\n{netlist}\nLet's think step by step."),
+        ]
+    )
+    return v3

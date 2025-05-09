@@ -21,6 +21,7 @@ from prompt_collections.hl2 import (
 )
 from prompt_collections.hl3 import (
     prompt_hl3_direct_prompting_multiple_subcircuits_with_instrucion,
+    prompt_hl3_direct_prompting_multiple_subcircuits,
 )
 
 
@@ -28,18 +29,29 @@ def llm_invoke(model, prompt, data: SPICENetlist) -> list[str, str]:
     try:
         logger.info(prompt.invoke(data.netlist).to_string())
         chain = prompt | model  # | parser
-        output = chain.invoke({"netlist": data.netlist}).content
+        output = chain.invoke({"netlist": data.netlist})
         logger.info("output before parsing: " + str(output))
-        parsed_data = eval(
-            output[output.find("<result>") + len("<result>") : output.find("</result>")]
+        parsed_data = json.loads(
+            output.content[
+                output.content.find("<json>")
+                + len("<json>") : output.content.find("</json>")
+            ]
         )
         assert isinstance(
             parsed_data, list
         ), f"parsed_data invalid type: {type(parsed_data)}"
-        return output, parsed_data
+        parsed_data = [
+            (cluster["sub_circuit_name"], cluster["components"])
+            for cluster in parsed_data
+        ]
+        return output.content, parsed_data
+
+    except json.decoder.JSONDecodeError as e:
+        logger.error(f"parsing LLM output failed: " + output.content)
+        return output.content, None
     except Exception as e:
         logger.error(f"exception: {e}")
-        return None, None
+        return output, None
 
 
 def find_subcircuits(
@@ -50,35 +62,48 @@ def find_subcircuits(
     metadata: str = None,
 ):
     results = []
-    i = 1
-    max_i = 101
+    max_attempts = 2
 
-    num_attempts = 0
-    max_attempts = 5
-
-    while i < max_i and num_attempts < max_attempts:
+    for i in range(1, 101):
         data = SPICENetlist(f"data/asi-fuboco-test/{subset}/{i}/")
         logger.info("netlist #" + str(i))
 
-        try:
-            if len(prompts) == 1:
-                outputs = []
-                output, parsed_data = llm_invoke(model, prompts[0], data)
-                parsed_data = parsed_data
-                if output is None or parsed_data is None:
-                    raise Exception("LLM output is None")
-                outputs.append(output)
-            else:
-                parsed_data = []
-                outputs = []
-                for p in prompts:
-                    partial_output, partial_parsed_data = llm_invoke(model, p, data)
-                    if partial_output is not None and partial_parsed_data is not None:
+        num_attempts = 0
+        result_dir = f"{metadata['llm_output_dir']}/netlist_{i}"
+        while num_attempts < max_attempts:
+            try:
+                if len(prompts) == 1:
+                    outputs = []
+                    output, parsed_data = llm_invoke(model, prompts[0], data)
+                    parsed_data = parsed_data
+                    if output is None or parsed_data is None:
+                        raise Exception("LLM output is None")
+                    outputs.append(output)
+                else:
+                    parsed_data = []
+                    outputs = []
+                    for p in prompts:
+                        partial_output, partial_parsed_data = llm_invoke(model, p, data)
+                        if partial_output is None or partial_parsed_data is None:
+                            raise Exception("LLM (partial) output is None")
                         parsed_data += partial_parsed_data
                         outputs.append(partial_output)
-        except Exception as e:
-            logger.error(f"exception: {e}")
-            num_attempts += 1
+                break
+            except Exception as e:
+                logger.error(f"exception: {e}")
+                num_attempts += 1
+                continue
+
+        if num_attempts >= max_attempts:
+            logger.info(
+                f"can not identify subcircuit in the netlist: data/asi-fuboco-test/{subset}/{i}/"
+            )
+            results.append({"Precision": 0, "Recall": 0, "F1-score": 0})
+            for output_index, output_data in enumerate(outputs):
+                with open(f"{result_dir}/output_{output_index}.txt", "w") as fw:
+                    fw.write(output_data)
+                    fw.write("\n------------------------\n")
+
             continue
 
         output = "\n".join(outputs)
@@ -104,10 +129,7 @@ def find_subcircuits(
         logger.info("------------------------------------")
         results.append(eval_results)
 
-        num_attempts = 0
-
         # Save prompt and netlist data
-        result_dir = f"{metadata['llm_output_dir']}/netlist_{i}"
 
         Path(result_dir).mkdir(parents=True, exist_ok=True)
         with open(f"{result_dir}/data.txt", "w") as fw:
@@ -141,12 +163,7 @@ def find_subcircuits(
         with open(f"{result_dir}/eval_results.json", "w") as fw:
             fw.write(json.dumps(eval_results, indent=2))
 
-        i += 1
-
-    if num_attempts < max_attempts:
-        return results
-    else:
-        return [{"Precision": 0, "Recall": 0, "F1-score": 0}]
+    return results
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -280,7 +297,16 @@ def main(config: DictConfig) -> None:
                             )
                         )
                     else:
-                        raise NotImplementedError("hl3 without instruction provided!")
+                        prompt = prompt_hl3_direct_prompting_multiple_subcircuits()
+                        result = average_metrics(
+                            find_subcircuits(
+                                subset,
+                                model,
+                                prompts=[prompt],
+                                category=category,
+                                metadata=metadata,
+                            )
+                        )
 
                 content = f"**result**: model={model_name},subset={subset},category={category}:{result}"
                 logger.info(content)
