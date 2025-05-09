@@ -168,9 +168,9 @@ def find_subcircuits(
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(config: DictConfig) -> None:
-    save_dir = f"outputs/instruction+following/"
+    save_dir = f"outputs/{config['result_dir']}/"
     Path(save_dir).mkdir(parents=True, exist_ok=True)
-    configure_logging(logdir=save_dir)
+    configure_logging(logdir=save_dir, logname=config["logfile"])
     logger.info(OmegaConf.to_yaml(config) + "\n\n\n")
 
     if config.eval_llm_set == "opensource_llms":

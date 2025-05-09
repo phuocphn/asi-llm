@@ -29,3 +29,5 @@ eval_llm_set: opensource_llms
 
 rule_provided: false
 rule_src: null
+logfile: null 
+result_dir: "instruction+following" 
