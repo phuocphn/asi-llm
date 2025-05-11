@@ -422,6 +422,61 @@ def gen_python_script_chat_template_v4(
     return prompt
 
 
+def gen_python_script_chat_template_v5(
+    subcircuit_name: str = "Current Mirrors",
+    instruction: str = None,
+    testcase: str = None,
+):
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                f"""
+    You are an experienced Python programmer working on identifying **{subcircuit_name}** in a SPICE netlist.  
+    You will be given the step-by-step instructions on how to identify **{subcircuit_name}** in a SPICE netlist.
+    
+    Your task is to:
+    - Translate the given instructions for identifying **{subcircuit_name}** into a Python script.  
+    - The generated Python script should extract a list of all available **{subcircuit_name}** from a new, unseen SPICE netlist.
+    - The generated Python script should follow the function template below:
+
+        ```python
+        def findSubCircuit(netlist: str): 
+            \"\"\"
+            Find all {subcircuit_name} subcircuits.
+
+            Args:
+                netlist (str): A flat SPICE netlist as a string, where each line defines a component and its connections in the circuit.
+
+            Returns:
+                List of tuples containing identified subcircuit names and the corresponding transistors.
+            \"\"\"
+            # add your code here
+        ```
+
+    - For each given test case, write an assertion (by using assert keyword in Python) to ensure the returned output matches the expected output.
+    - In addition to the assertion, print the expected output, actual output, and any relevant information to assist in debugging if the result is not as expected.
+    - Always raise an assertion error if the output does not match the expected output.
+
+    Let's think step by step.
+    """,
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            (
+                "human",
+                f"""
+            **Instructions**
+            ```
+            {instruction}
+            ```
+            {testcase}
+             """,
+            ),
+        ]
+    )
+    return prompt
+
+
 def gen_pythoncode_without_instruction(
     subcircuit_name: str = "Current Mirrors",
     instruction: str = None,
@@ -456,6 +511,56 @@ def gen_pythoncode_without_instruction(
     - For each given test case, write an assertion to ensure the returned output matches the expected output.
     - In addition to the assertion, print the expected output, actual output, and any relevant information to assist in debugging if the result is not as expected.
 
+    Let's think step by step.
+    """,
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            (
+                "human",
+                f"""
+            {testcase}
+             """,
+            ),
+        ]
+    )
+    return prompt
+
+
+def gen_pythoncode_without_instruction_v5(
+    subcircuit_name: str = "Current Mirrors",
+    instruction: str = None,
+    testcase: str = None,
+):
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                f"""
+    You are an experienced Python programmer working on identifying **{subcircuit_name}** in a SPICE netlist.  
+    
+    Your task is to:
+    - Write a Python script for identifying **{subcircuit_name}**.  
+    - The generated Python script should extract a list of all available **{subcircuit_name}** from a new, unseen SPICE netlist.
+    - The generated Python script should follow the function template below:
+
+        ```python
+        def findSubCircuit(netlist: str): 
+            \"\"\"
+            Find all {subcircuit_name} subcircuits.
+
+            Args:
+                netlist (str): A flat SPICE netlist as a string, where each line defines a component and its connections in the circuit.
+
+            Returns:
+                List of tuples containing identified subcircuit names and the corresponding transistors.
+            \"\"\"
+            # add your code here
+        ```
+
+    - For each given test case, write an assertion to ensure the returned output matches the expected output.
+    - In addition to the assertion, print the expected output, actual output, and any relevant information to assist in debugging if the result is not as expected.
+    - Always raise an assertion error if the output does not match the expected output.
+    
     Let's think step by step.
     """,
             ),
@@ -546,6 +651,33 @@ def update_python_script(
         f"""
     When I executed the provided Python code, I got the following error message:
 
+    **Error Message**  
+    ```
+    {error_message}
+    ```
+
+    
+    Your task is to revise the previously generated Python code and fix any bugs or incorrect logic so that the returned output matches the expected output.  
+    In addition, add relevant assertions with detailed debugging information to assist future revisions and avoid repeating the same error.
+
+    Let's think step by step.
+    """
+    )
+    return prompt
+
+
+def update_python_script_v2(
+    python_code: str = None,
+    error_message: str = "Traceback Error: ....",
+):
+    prompt = PromptTemplate.from_template(
+        f"""
+    When I executed the provided Python code, I got the following error message:
+
+    ** Provided Python Code**  
+    ```python
+    {python_code}
+    ```
     **Error Message**  
     ```
     {error_message}
