@@ -148,7 +148,7 @@ def gen_instruction_hl3_prompt(
         ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['loadPart'])} transistor(s) belong to **load parts**: {hl3_gt['loadPart']}\n"
     if "biasPart" in hl3_gt and len(hl3_gt["biasPart"]) > 0:
         ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['biasPart'])} transistor(s) belong to **bias parts**: {hl3_gt['biasPart']}\n"
-    if "feedBack" in hl3_gt and len(len(hl3_gt["feedBack"])) > 0:
+    if "feedBack" in hl3_gt and len(hl3_gt["feedBack"]) > 0:
         ground_truth += f"- In the given SPICE netlist, there are a total of {len(hl3_gt['feedBack'])} transistor(s) belong to **feedback stages**: {hl3_gt['feedBack']}\n"
 
     prompt = PromptTemplate.from_template(
