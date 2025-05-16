@@ -47,6 +47,9 @@ demonstration_netlists = {
     ],
     7: ["data/asi-fuboco-train/small/77/"],
     8: ["data/asi-fuboco-train/medium/55/"],
+    9: ["data/asi-fuboco-train/small/58/"],
+    10: ["data/asi-fuboco-train/small/91/"],
+    11: ["data/asi-fuboco-train/small/91/", "data/asi-fuboco-train/small/58/"],
 }
 
 
