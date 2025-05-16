@@ -350,7 +350,7 @@ def code_generator(
             "instruction_generation",
             model_name,
             instruction_dir[subcircuit_name],
-            "instruction-5.md",
+            "instruction-5-revised.md",
         )
 
         if subcircuit == "HL1":
