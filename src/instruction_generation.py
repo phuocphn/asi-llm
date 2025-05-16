@@ -18,11 +18,13 @@ from models import load_llms, google_genai_model
 from utils import ppformat, configure_logging
 
 
-def get_demonstration_examples(netlist_ids=[56, 49, 51]):
+def get_demonstration_examples(
+    netlist_ids=[56, 49, 51], subsets=["small", "medium"], level=2
+):
     all_examples = []
     subcircuit_names = set()
 
-    for dir in ["small", "medium"]:
+    for dir in subsets:
         for i in netlist_ids:
             netlist_dir = f"data/asi-fuboco-train/{dir}/{i}/"
             tree = ET.parse(
@@ -37,7 +39,10 @@ def get_demonstration_examples(netlist_ids=[56, 49, 51]):
                 subcircuit_names.add(subcircuit_name)
             all_examples.append(netlist_dir)
 
-    assert len(subcircuit_names) == 21, f"number of subcircuit: {len(subcircuit_names)}"
+    if level == 2 or level == 1:
+        assert len(subcircuit_names) == 21, f"#subcircuit: {len(subcircuit_names)}"
+    else:
+        assert len(subcircuit_names) == 6, f"#subcircuit: {len(subcircuit_names)}"
     return all_examples
 
 
@@ -49,7 +54,7 @@ def model_call(model, prompt, data: SPICENetlist) -> list[str, str]:
         else:
             chain = prompt | model  # | parser
             output = chain.invoke({"netlist": data.netlist}).content
-        
+
         parsed_data = output[
             output.find("<instruction>")
             + len("<instruction>") : output.find("</instruction>")
@@ -65,10 +70,7 @@ def model_call(model, prompt, data: SPICENetlist) -> list[str, str]:
         return None, None
 
 
-def gen_rules(model_name, subcircuit):
-    demonstration_examples = get_demonstration_examples(netlist_ids=[77, 55, 30])
-
-    logger.info(f"len of demonstration examples: {demonstration_examples}")
+def gen_rules(model_name, subcircuit: str):
     subcircuit_abbrev_map = {
         "Current Mirror": "CM",
         "Differential Pair": "DiffPair",
@@ -82,6 +84,17 @@ def gen_rules(model_name, subcircuit):
         level = 3
     else:
         level = 2
+
+    if not subcircuit.startswith("HL3"):
+        demonstration_examples = get_demonstration_examples(
+            netlist_ids=[77, 55, 30], level=level
+        )
+    else:
+        demonstration_examples = get_demonstration_examples(
+            netlist_ids=[91, 58], subsets=["small"], level=level
+        )
+
+    logger.info(f"len of demonstration examples: {demonstration_examples}")
 
     model = load_llms(model_name)
     if level == 2:
