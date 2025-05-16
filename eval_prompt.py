@@ -209,7 +209,7 @@ def main(config: DictConfig) -> None:
                             "instruction_generation",
                             model_name,
                             "HL1",
-                            "instruction-5.md",
+                            "instruction-5-revised.md",
                         )
                         with open(instruction_path, "r") as f:
                             instruction_src = f.read()
@@ -248,7 +248,7 @@ def main(config: DictConfig) -> None:
                                     "instruction_generation",
                                     model_name,
                                     instruction_dir[sc],
-                                    "instruction-5.md",
+                                    "instruction-5-revised.md",
                                 )
                                 with open(instruction_path, "r") as f:
                                     instruction_src = f.read()
@@ -279,7 +279,7 @@ def main(config: DictConfig) -> None:
                             "instruction_generation",
                             model_name,
                             "HL3",
-                            "instruction-5.md",
+                            "instruction-5-revised.md",
                         )
                         with open(instruction_path, "r") as f:
                             instruction_src = f.read()
